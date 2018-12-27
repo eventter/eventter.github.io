@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Docs on EventterMQ</title>
+    <link>https://eventter.io/docs/</link>
+    <description>Recent content in Docs on EventterMQ</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 27 Dec 2018 14:30:01 +0100</lastBuildDate>
+    
+	<atom:link href="https://eventter.io/docs/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Getting Started</title>
+      <link>https://eventter.io/docs/getting-started/</link>
+      <pubDate>Thu, 27 Dec 2018 14:30:01 +0100</pubDate>
+      
+      <guid>https://eventter.io/docs/getting-started/</guid>
+      <description>Installation Build from source TODO
+Docker TODO
+Topics TODO
+Consumer groups TODO
+Publishing to topics TODO
+Subscribing to consumer groups TODO
+What next? TODO</description>
+    </item>
+    
+    <item>
+      <title>Use Cases</title>
+      <link>https://eventter.io/docs/use-cases/</link>
+      <pubDate>Thu, 27 Dec 2018 16:11:09 +0100</pubDate>
+      
+      <guid>https://eventter.io/docs/use-cases/</guid>
+      <description>Work Queues TODO
+Publish/subscribe TODO
+RPC TODO
+Event Sourcing TODO
+Event Tracking, Metrics, Logging TODO</description>
+    </item>
+    
+    <item>
+      <title>Protocols / API</title>
+      <link>https://eventter.io/docs/protocols/</link>
+      <pubDate>Thu, 27 Dec 2018 15:34:04 +0100</pubDate>
+      
+      <guid>https://eventter.io/docs/protocols/</guid>
+      <description>AMQP 0.9.1 TODO
+AMQP 1.0 TODO
+MQTT TODO
+gRPC TODO</description>
+    </item>
+    
+  </channel>
+</rss>

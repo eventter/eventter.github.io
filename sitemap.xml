@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <url>
+    <loc>https://eventter.io/docs/getting-started/</loc>
+    <lastmod>2018-12-27T14:30:01+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://eventter.io/docs/use-cases/</loc>
+    <lastmod>2018-12-27T16:11:09+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://eventter.io/docs/protocols/</loc>
+    <lastmod>2018-12-27T15:34:04+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://eventter.io/categories/</loc>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://eventter.io/docs/</loc>
+    <lastmod>2018-12-27T14:30:01+01:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://eventter.io/</loc>
+    <lastmod>2018-12-27T14:30:01+01:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://eventter.io/tags/</loc>
+    <priority>0</priority>
+  </url>
+  
+</urlset>

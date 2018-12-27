@@ -129,7 +129,22 @@ headingSelector: 'h3'
 
 <h4 id="build-from-source">Build from source</h4>
 
-<p>TODO</p>
+<p>You will need:</p>
+
+<ul>
+<li><a href="https://git-scm.com/downloads">Git</a></li>
+<li><a href="https://golang.org/dl/">Go</a> (1.11 or newer)</li>
+</ul>
+
+<p>First download source code from the project public repository:</p>
+
+<pre><code class="language-sh">git clone https://github.com/eventter/eventter.git
+</code></pre>
+
+<p>Then go to the root of the downloaded repository and build <code>eventtermq</code> binary:</p>
+
+<pre><code class="language-sh">go build -o eventtermq ./bin/eventtermq
+</code></pre>
 
 <h4 id="docker">Docker</h4>
 

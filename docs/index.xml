@@ -72,5 +72,17 @@ gRPC TODO</description>
       <description>TODO</description>
     </item>
     
+    <item>
+      <title>Architecture</title>
+      <link>https://eventter.io/docs/design-doc/</link>
+      <pubDate>Fri, 28 Dec 2018 17:46:02 +0100</pubDate>
+      
+      <guid>https://eventter.io/docs/design-doc/</guid>
+      <description>EventterMQ is a cloud-native message queue / distributed log broker.
+Why cloud-native?
+ Distributed by default - running a single node is just a cluster with 1 member. Minimal configuration, 12-factor app. Nodes can go away, be dynamically removed, added etc. with cluster being still available.  Why message queue / distributed log?
+ Support for multiple protocols for publishing and consuming messages  gRPC - main protocol, also used for inter-node communication AMQP 0.</description>
+    </item>
+    
   </channel>
 </rss>

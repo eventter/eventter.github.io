@@ -136,7 +136,7 @@ headingSelector: 'h3'
 
 <h3 id="amqp-0-9-1">AMQP 0.9.1</h3>
 
-<p>AMQP 0.9.1 is a binary protocol intended for messaging. It&rsquo;s reasonably easy to implement, therefore there are many client libraries. It&rsquo;s most well-know to be a protocol <a href="http://www.rabbitmq.com/">RabbitMQ</a> uses. Probably most up-to-date list of client libraries can be found on RabbitMQ website <a href="https://www.rabbitmq.com/devtools.html">here</a>. Some notable mentions:</p>
+<p>AMQP 0.9.1 is a binary protocol intended for messaging. It&rsquo;s reasonably easy to implement, therefore there are many client libraries. It&rsquo;s most well-know to be the core protocol of <a href="http://www.rabbitmq.com/">RabbitMQ</a>. Probably most up-to-date list of client libraries can be found on RabbitMQ website <a href="https://www.rabbitmq.com/devtools.html">here</a>. Some notable mentions:</p>
 
 <ul>
 <li><a href="https://github.com/squaremo/amqp.node">amqp.node</a> - Node.JS (Javascript) client library,</li>
@@ -145,7 +145,7 @@ headingSelector: 'h3'
 <li><a href="https://github.com/streadway/amqp">streadway/amqp</a> - Go client library,</li>
 <li><a href="http://rubybunny.info/">Bunny</a> - Ruby client library,</li>
 <li><a href="https://github.com/sozu-proxy/lapin">Lapin</a> - Rust client library,</li>
-<li><a href="https://github.com/alanxz/rabbitmq-c">RabbitMQ C</a> - C-language client library.</li>
+<li><a href="https://github.com/alanxz/rabbitmq-c">RabbitMQ C</a> - C client library.</li>
 </ul>
 
 <blockquote>
@@ -216,8 +216,8 @@ headingSelector: 'h3'
 <p>Support for additional protocols is planned. At the moment planned protocols are:</p>
 
 <ul>
-<li>AMQP 1.0 - it would seem that AMQP 1.0 is just another version of AMQP 0.9.1, they&rsquo;re in essence completely different protocols (different semantics, different wire representations), although developed by the same working group and both targeted for messaging (AMQP 0.9.1 was chosen to be implemented first as it&rsquo;s used more),</li>
-<li>HTTP - simple protocol, albeit not intended for messages (if you look into <code>emq.proto</code>, you&rsquo;ll see that all RPC calls are annotated with HTTP verbs and paths, it should be easy to generate HTTP service using <a href="https://github.com/grpc-ecosystem/grpc-gateway">grpc-gateway</a>).</li>
+<li>AMQP 1.0 - it would seem that AMQP 1.0 is just another version of AMQP 0.9.1, however, they&rsquo;re, in essence, completely different protocols (different semantics, wire representations), albeit developed by the same working group and both targeted for messaging (AMQP 0.9.1 was chosen to be implemented first as it&rsquo;s used more),</li>
+<li>HTTP - simple protocol, although not intended for messaging (if you look into <code>emq.proto</code>, you&rsquo;ll see that all RPC calls are annotated with HTTP verbs and paths, it should be easy to generate HTTP service using <a href="https://github.com/grpc-ecosystem/grpc-gateway">grpc-gateway</a>).</li>
 <li>MQTT - protocol mostly used for <a href="https://en.wikipedia.org/wiki/Internet_of_things">IoT</a> and compute-/memory-constrained devices.</li>
 </ul>
 

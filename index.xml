@@ -42,7 +42,7 @@ EventterMQ can be used for this as well. It supports standardized messaging prot
       
       <guid>https://eventter.io/docs/protocols/</guid>
       <description>EventterMQ currently supports two protocols:
- AMQP 0.9.1 (standardized messaging protocol), gRPC service described by emq.proto (see it on GitHub).  AMQP 0.9.1 AMQP 0.9.1 is a binary protocol intended for messaging. It&amp;rsquo;s reasonably easy to implement, therefore there are many client libraries. It&amp;rsquo;s most well-know to be a protocol RabbitMQ uses. Probably most up-to-date list of client libraries can be found on RabbitMQ website here. Some notable mentions:</description>
+ AMQP 0.9.1 (standardized messaging protocol), gRPC service described by emq.proto (see it on GitHub).  AMQP 0.9.1 AMQP 0.9.1 is a binary protocol intended for messaging. It&amp;rsquo;s reasonably easy to implement, therefore there are many client libraries. It&amp;rsquo;s most well-know to be the core protocol of RabbitMQ. Probably most up-to-date list of client libraries can be found on RabbitMQ website here. Some notable mentions:</description>
     </item>
     
     <item>

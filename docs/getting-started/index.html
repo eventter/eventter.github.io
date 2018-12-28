@@ -98,7 +98,7 @@
         <div id="hero">
             <h1> Getting Started </h1>
             <p class="hero-lead">
-                In this tutorial you will learn how to install the broker, how it approaches messaging, and how to send and receive messages.
+                In this tutorial you will learn how to install the broker, how it approaches messaging, and how to send and receive messages
             </p>
 
         </div>
@@ -134,15 +134,9 @@ headingSelector: 'h3'
 <h4 id="docker">Docker</h4>
 
 <p>Docker image can be <a href="https://hub.docker.com/r/eventter/mq/">pulled from Docker Hub</a>.</p>
-
-<pre><code class="language-sh">$ docker pull eventter/mq
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker pull eventter/mq</code></pre></div>
 <p>To start the broker, run:</p>
-
-<pre><code class="language-sh">$ docker run --name emq-broker -p 16000:16000 -d eventter/mq
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker run --name emq-broker -p <span style="color:#099">16000</span>:16000 -d eventter/mq</code></pre></div>
 <h4 id="build-from-source">Build from source</h4>
 
 <p>You will need:</p>
@@ -153,34 +147,22 @@ headingSelector: 'h3'
 </ul>
 
 <p>First download source code from the project public repository:</p>
-
-<pre><code class="language-sh">$ git clone https://github.com/eventter/eventter.git
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ git clone https://github.com/eventter/eventter.git</code></pre></div>
 <p>Then go to the root of the downloaded repository and build <code>eventtermq</code> binary:</p>
-
-<pre><code class="language-sh">$ go build -o eventtermq ./bin/eventtermq
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ go build -o eventtermq ./bin/eventtermq</code></pre></div>
 <p>To start the broker, run:</p>
-
-<pre><code class="language-sh">$ eventermq --dir ./data
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ eventermq --dir ./data</code></pre></div>
 <h3 id="messaging-overview">Messaging overview</h3>
 
-<p>The broker supports multiple protocols for sending and receiving messages, see <a href="/docs/protocols/">Protocols</a> to learn about which protocols are supported. In this article we will use its native <a href="https://grpc.io/">gRPC</a> API through CLI interface.</p>
+<p>The broker supports multiple protocols for sending and receiving messages, see <a href="https://eventter.io/docs/protocols/">Protocols</a> to learn about which protocols are supported. In this article we will use its native <a href="https://grpc.io/">gRPC</a> API through CLI interface.</p>
 
 <p>The CLI uses the same binary as the broker. If you started the broker in Docker using the command above, please add following alias to your shell:</p>
-
-<pre><code class="language-sh">$ alias eventtermq=&quot;docker run --name emq-client --link emq-broker --rm eventter/mq --host emq-broker&quot;
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ <span style="color:#0086b3">alias</span> <span style="color:#008080">eventtermq</span><span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;docker run --name emq-client --link emq-broker --rm eventter/mq --host emq-broker&#34;</span></code></pre></div>
 <p>If you used other messaging products, you might be used to different models how messages are sent:</p>
 
 <ol>
 <li>First, simplest, approach is that messages are sent to <strong>queues</strong> (linear ordered data structure, messages are <strong>pushed to the front</strong>) as well as received from these queues (messages are <strong>popped from the back</strong>, i.e. from first to last). There is 1-to-1 relationship between producers and consumers.</li>
-<li>If you want to <strong>decouple</strong> producers and consumers, you need to add a <strong>level of indirection</strong>. For example <a href="/docs/amqp-0-9-1/">AMQP 0.9.1</a> (which is also supported by EventterMQ, see linked article to learn how you can communicate with the broker using AMQP) does this by adding so-called <strong>exchanges</strong>. Producers send messages to exchanges. Exchanges, through defined rules, route messages to zero or more queues. Each queue receives a <strong>copy</strong> of the messages.</li>
+<li>If you want to <strong>decouple</strong> producers and consumers, you need to add a <strong>level of indirection</strong>. For example <a href="https://eventter.io/docs/amqp-0-9-1/">AMQP 0.9.1</a> (which is also supported by EventterMQ, see linked article to learn how you can communicate with the broker using AMQP) does this by adding so-called <strong>exchanges</strong>. Producers send messages to exchanges. Exchanges, through defined rules, route messages to zero or more queues. Each queue receives a <strong>copy</strong> of the messages.</li>
 <li>Or you can do it the other way around, messages are sent to <strong>topics</strong> (similar to queues in that they&rsquo;re linear ordered data structure, messages are <strong>pushed to the front</strong>, however, unlike queues messages can be <strong>read from any point</strong>, not only popped from the back). Then client(s) that want to receive messages form <strong>consumer groups</strong>. Each consumer group reads each message from the topic once.</li>
 </ol>
 
@@ -195,29 +177,20 @@ headingSelector: 'h3'
 <h3 id="create-topic">Create topic</h3>
 
 <p>So first you need to create a topic:</p>
-
-<pre><code class="language-sh">$ eventtermq create-topic my-topic --shards 1 --replication-factor 3
-{
-  &quot;ok&quot;: true,
-  &quot;index&quot;: 15
-}
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ eventtermq create-topic my-topic --shards <span style="color:#099">1</span> --replication-factor <span style="color:#099">3</span>
+<span style="color:#000;font-weight:bold">{</span>
+  <span style="color:#d14">&#34;ok&#34;</span>: true,
+  <span style="color:#d14">&#34;index&#34;</span>: <span style="color:#099">15</span>
+<span style="color:#000;font-weight:bold">}</span></code></pre></div>
 <blockquote>
 <p><strong>Note: Namespaces</strong></p>
 
 <p>EventterMQ is designed to be multi-tenant. Topics (and consumer groups as well) are scoped by namespaces. By default on a new cluster an empty namespace called <code>default</code> is created.</p>
 
 <p>CLI commands use this namespace by default. If you want to create different namespace, run:</p>
-
-<pre><code class="language-sh">$ eventtermq create-namespace my-namespace
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ eventtermq create-namespace my-namespace</code></pre></div>
 <p>Then add option <code>--namespace</code> to CLI invocations, e.g.:</p>
-
-<pre><code class="language-sh">$ eventtermq create-topic my-topic --namespace my-namespace --shards 1 --replication-factor 3 --retention 24h
-</code></pre>
-</blockquote>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ eventtermq create-topic my-topic --namespace my-namespace --shards <span style="color:#099">1</span> --replication-factor <span style="color:#099">3</span> --retention 24h</code></pre></div></blockquote>
 
 <h4 id="shards">Shards</h4>
 
@@ -242,31 +215,25 @@ headingSelector: 'h3'
 <h3 id="send-message">Send message</h3>
 
 <p>After you&rsquo;ve created a topic, you can send messages to it (in messaging parlance, <strong>publish</strong> messages to it):</p>
-
-<pre><code class="language-sh">$ eventtermq publish my-topic &quot;hello, world&quot;
-{
-  &quot;ok&quot;: true
-}
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ eventtermq publish my-topic <span style="color:#d14">&#34;hello, world&#34;</span>
+<span style="color:#000;font-weight:bold">{</span>
+  <span style="color:#d14">&#34;ok&#34;</span>: <span style="color:#0086b3">true</span>
+<span style="color:#000;font-weight:bold">}</span></code></pre></div>
 <h3 id="create-consumer-group">Create consumer group</h3>
 
 <p>As written earlier, messages are received by <strong>consumer groups</strong>. To create consumer group, run:</p>
-
-<pre><code class="language-sh">$ eventtermq create-consumer-group my-cg --bind my-topic --since -1h --size 1024
-{
-  &quot;ok&quot;: true,
-  &quot;index&quot;: 34
-}
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ eventtermq create-consumer-group my-cg --bind my-topic --since -1h --size <span style="color:#099">1024</span>
+<span style="color:#000;font-weight:bold">{</span>
+  <span style="color:#d14">&#34;ok&#34;</span>: true,
+  <span style="color:#d14">&#34;index&#34;</span>: <span style="color:#099">34</span>
+<span style="color:#000;font-weight:bold">}</span></code></pre></div>
 <p>Consumer group is a task that runs on one of the nodes in the cluster and manages reading messages from bound topics. Consumer group may be bound to no topic - if so, consumer won&rsquo;t every receive any message.</p>
 
 <h4 id="bindings">Bindings</h4>
 
 <p>Binding connects consumer group to a topic and specifies what messages read from the topic&rsquo;s segments will be sent to consumers. Binding contains name of the topic (topic must exist at the time the consumer group is being created), <strong>exchange type</strong> (and possibly for certain exchange types additional data).</p>
 
-<p>Exchange types are those as defined in <a href="/docs/amqp-0-9-1/">AMQP 0.9.1</a>:</p>
+<p>Exchange types are those as defined in <a href="https://eventter.io/docs/amqp-0-9-1/">AMQP 0.9.1</a>:</p>
 
 <ul>
 <li><strong>fanout</strong> exchange type matches all messages,</li>
@@ -277,7 +244,7 @@ headingSelector: 'h3'
 
 <p>If any binding matches the message, it&rsquo;s sent to consumers. If multiple bindings would match, message is sent only once.</p>
 
-<p>When creating consumer group from CLI, <code>--bind</code> creates <em>fanout</em> binding, <code>--bind-direct</code> <em>direct</em> binding, and <code>--bind-topic</code> <em>topic</em> binding. <em>Headers</em> exchange type is not used very often, and so cannot be created from CLI. If you want to create consumer group with <em>headers</em> exchange type, use directly one of <a href="/docs/protocols/">supported protocols</a>.</p>
+<p>When creating consumer group from CLI, <code>--bind</code> creates <em>fanout</em> binding, <code>--bind-direct</code> <em>direct</em> binding, and <code>--bind-topic</code> <em>topic</em> binding. <em>Headers</em> exchange type is not used very often, and so cannot be created from CLI. If you want to create consumer group with <em>headers</em> exchange type, use directly one of <a href="https://eventter.io/docs/protocols/">supported protocols</a>.</p>
 
 <h4 id="since">Since</h4>
 
@@ -297,25 +264,22 @@ headingSelector: 'h3'
 <li>sends <strong>rejection</strong> (<em>nack</em>) - message is re-sent to other consumers.</li>
 </ul>
 
-<p>Therefore there cannot be more messages <em>in-flight</em> than the size of the consumer group. Default consumer group size is set for consume group buffer to occupy about 1 MiB of memory (which is at the time of writing ~10 000 items).</p>
+<p>Therefore there cannot be more messages <em>in-flight</em> than the size of the consumer group. Default consumer group size is set for consume group buffer to occupy about 1 MiB of memory (which is, at the time of writing, ~10 000 items).</p>
 
 <h3 id="receive-message">Receive message</h3>
 
 <p>Finally when you want to receive messages from consumer group, you create subscription:</p>
-
-<pre><code class="language-sh">$ eventtermq subscribe my-cg
-{
-  &quot;topic&quot;: {
-    &quot;namespace&quot;: &quot;default&quot;,
-    &quot;name&quot;: &quot;my-topic&quot;
-  },
-  &quot;message&quot;: {
-    &quot;data&quot;: &quot;aGVsbG8sIHdvcmxk&quot;
-  }
-}
-^C
-</code></pre>
-
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ eventtermq subscribe my-cg
+<span style="color:#000;font-weight:bold">{</span>
+  <span style="color:#d14">&#34;topic&#34;</span>: <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#d14">&#34;namespace&#34;</span>: <span style="color:#d14">&#34;default&#34;</span>,
+    <span style="color:#d14">&#34;name&#34;</span>: <span style="color:#d14">&#34;my-topic&#34;</span>
+  <span style="color:#000;font-weight:bold">}</span>,
+  <span style="color:#d14">&#34;message&#34;</span>: <span style="color:#000;font-weight:bold">{</span>
+    <span style="color:#d14">&#34;data&#34;</span>: <span style="color:#d14">&#34;aGVsbG8sIHdvcmxk&#34;</span>
+  <span style="color:#000;font-weight:bold">}</span>
+<span style="color:#000;font-weight:bold">}</span>
+^C</code></pre></div>
 <blockquote>
 <p><strong>Note: CLI</strong></p>
 
@@ -326,9 +290,9 @@ headingSelector: 'h3'
 
 <h3 id="what-next">What next?</h3>
 
-<p>Do you still hesitate whether EventterMQ is the right tool for the job? Read about its <a href="/docs/use-cases/">use cases</a>.</p>
+<p>Do you still hesitate whether EventterMQ is the right tool for the job? Read about its <a href="https://eventter.io/docs/use-cases/">use cases</a>.</p>
 
-<p>In your application code you probably don&rsquo;t want to communicate with the broker by executing CLI commands. Learn about <a href="/docs/protocols/">protocols</a> the broker supports and libraries to use.</p>
+<p>In your application code you probably don&rsquo;t want to communicate with the broker by executing CLI commands. Learn about <a href="https://eventter.io/docs/protocols/">protocols</a> the broker supports and libraries to use.</p>
 
 
             <hr/>

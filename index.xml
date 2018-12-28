@@ -19,9 +19,9 @@
       <guid>https://eventter.io/docs/getting-started/</guid>
       <description>Installation EventterMQ doesn&amp;rsquo;t have a stable version yet. You can use latest Docker image that is automatically built from the latest source code, or you can build the broker binary yourself.
 Docker Docker image can be pulled from Docker Hub.
-$ docker pull eventter/mq  To start the broker, run:
-$ docker run --name emq-broker -p 16000:16000 -d eventter/mq  Build from source You will need:
- Git Go (1.</description>
+$ docker pull eventter/mq To start the broker, run:
+$ docker run --name emq-broker -p 16000:16000 -d eventter/mq Build from source You will need:
+ Git Go (1.11 or newer)  First download source code from the project public repository:</description>
     </item>
     
     <item>
@@ -41,8 +41,8 @@ EventterMQ can be used for this as well. It supports standardized messaging prot
       <pubDate>Thu, 27 Dec 2018 15:34:04 +0100</pubDate>
       
       <guid>https://eventter.io/docs/protocols/</guid>
-      <description>AMQP 0.9.1 TODO
-gRPC TODO</description>
+      <description>EventterMQ currently supports two protocols:
+ AMQP 0.9.1 (standardized messaging protocol), gRPC service described by emq.proto (see it on GitHub).  AMQP 0.9.1 AMQP 0.9.1 is a binary protocol intended for messaging. It&amp;rsquo;s reasonably easy to implement, therefore there are many client libraries. It&amp;rsquo;s most well-know to be a protocol RabbitMQ uses. Probably most up-to-date list of client libraries can be found on RabbitMQ website here. Some notable mentions:</description>
     </item>
     
     <item>
@@ -60,15 +60,6 @@ gRPC TODO</description>
       <pubDate>Fri, 28 Dec 2018 13:00:38 +0100</pubDate>
       
       <guid>https://eventter.io/docs/amqp-0-9-1/</guid>
-      <description>TODO</description>
-    </item>
-    
-    <item>
-      <title>gRPC</title>
-      <link>https://eventter.io/docs/grpc/</link>
-      <pubDate>Fri, 28 Dec 2018 16:21:28 +0100</pubDate>
-      
-      <guid>https://eventter.io/docs/grpc/</guid>
       <description>TODO</description>
     </item>
     

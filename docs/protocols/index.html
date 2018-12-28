@@ -98,7 +98,7 @@
         <div id="hero">
             <h1> Protocols </h1>
             <p class="hero-lead">
-                .
+                Which protocols does EventterMQ support?
             </p>
 
         </div>
@@ -127,13 +127,99 @@ headingSelector: 'h3'
 
             
 
+<p>EventterMQ currently supports two protocols:</p>
+
+<ul>
+<li><a href="https://eventter.io/docs/amqp-0-9-1/">AMQP 0.9.1</a> (standardized messaging protocol),</li>
+<li><a href="https://grpc.io/">gRPC</a> service described by <code>emq.proto</code> (<a href="https://github.com/eventter/eventter/tree/master/mq/emq/emq.proto">see it on GitHub</a>).</li>
+</ul>
+
 <h3 id="amqp-0-9-1">AMQP 0.9.1</h3>
 
-<p>TODO</p>
+<p>AMQP 0.9.1 is a binary protocol intended for messaging. It&rsquo;s reasonably easy to implement, therefore there are many client libraries. It&rsquo;s most well-know to be a protocol <a href="http://www.rabbitmq.com/">RabbitMQ</a> uses. Probably most up-to-date list of client libraries can be found on RabbitMQ website <a href="https://www.rabbitmq.com/devtools.html">here</a>. Some notable mentions:</p>
+
+<ul>
+<li><a href="https://github.com/squaremo/amqp.node">amqp.node</a> - Node.JS (Javascript) client library,</li>
+<li><a href="https://github.com/rabbitmq/rabbitmq-java-client/">RabbitMQ Java Client</a> - Java client library, developed by RabbitMQ,</li>
+<li><a href="https://github.com/jakubkulhan/bunny">BunnyPHP</a> - PHP client library,</li>
+<li><a href="https://github.com/streadway/amqp">streadway/amqp</a> - Go client library,</li>
+<li><a href="http://rubybunny.info/">Bunny</a> - Ruby client library,</li>
+<li><a href="https://github.com/sozu-proxy/lapin">Lapin</a> - Rust client library,</li>
+<li><a href="https://github.com/alanxz/rabbitmq-c">RabbitMQ C</a> - C-language client library.</li>
+</ul>
+
+<blockquote>
+<p><strong>Note: Keywords</strong></p>
+
+<p>As you can see most libraries are very &ldquo;rabbit-themed&rdquo;, therefore if you search for a library in your language, try keywords, apart from <strong>amqp</strong>, such as <strong>rabbitmq</strong>, <strong>rabbit</strong>, <strong>bunny</strong>, <strong>lapin</strong> etc.</p>
+</blockquote>
+
+<hr />
+
+<blockquote>
+<p><strong>Note 2: Protocol extensions</strong></p>
+
+<p>RabbitMQ <a href="https://www.rabbitmq.com/extensions.html">extends</a> AMQP 0.9.1 in several ways. The only RabbitMQ extension supported by EventterMQ is <a href="https://www.rabbitmq.com/nack.html">basic.nack</a>. This extension is reported by EventterMQ when opening new connection, however, some client libraries might not consider server-reported capabilities and take all RabbitMQ extensions for granted.</p>
+</blockquote>
+
+<p>AMQP uses slightly different model for decoupling producers and consumers than EventterMQ. To see how AMQ entities map to EventterMQ entities read through separate <a href="https://eventter.io/docs/amqp-0-9-1/">AMQP 0.9.1 article</a>.</p>
 
 <h3 id="grpc">gRPC</h3>
 
-<p>TODO</p>
+<p>gRPC API is described by <code>emq.proto</code> (<a href="https://github.com/eventter/eventter/tree/master/mq/emq/emq.proto">see it on GitHub</a>). You can use this API to manage namespaces, topics, consumer groups, and to work with messages (publish &amp; consume). To see how to use this service definition file to generate client library, see <a href="https://grpc.io/docs/quickstart/">gRPC quick start</a>.</p>
+
+<p>There is <a href="https://golang.org/">Go</a> client (generated from service definition above) available as package <code>eventter.io/mq/emq</code>. To get the library, run:</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ go get -u eventter.io/mq/emq</code></pre></div>
+<p>Example usage:</p>
+
+<nav class="tabs" data-component="tabs">
+    <ul><li class="active">
+                    <a href="#examples-grpc-client-client-go">Go</a>
+                </li></ul>
+</nav>
+<div id="examples-grpc-client-client-go"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#000;font-weight:bold">package</span> main
+
+<span style="color:#000;font-weight:bold">import</span> (
+	<span style="color:#d14">&#34;context&#34;</span>
+
+	<span style="color:#d14">&#34;eventter.io/mq/emq&#34;</span>
+	<span style="color:#d14">&#34;google.golang.org/grpc&#34;</span>
+)
+
+<span style="color:#000;font-weight:bold">func</span> <span style="color:#900;font-weight:bold">main</span>() {
+	<span style="color:#998;font-style:italic">// at the moment the broker doesn&#39;t support TLS-encrypted connections,
+</span><span style="color:#998;font-style:italic"></span>	<span style="color:#998;font-style:italic">// always use grpc.WithInsecure() option
+</span><span style="color:#998;font-style:italic"></span>
+	client, err <span style="color:#000;font-weight:bold">:=</span> emq.<span style="color:#900;font-weight:bold">Dial</span>(<span style="color:#d14">&#34;127.0.0.1:16000&#34;</span>, grpc.<span style="color:#900;font-weight:bold">WithInsecure</span>())
+	<span style="color:#000;font-weight:bold">if</span> err <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">nil</span> {
+		<span style="color:#0086b3">panic</span>(err)
+	}
+	<span style="color:#000;font-weight:bold">defer</span> client.<span style="color:#900;font-weight:bold">Close</span>()
+
+	<span style="color:#998;font-style:italic">// work with client, e.g.:
+</span><span style="color:#998;font-style:italic"></span>
+	ctx, cancel <span style="color:#000;font-weight:bold">:=</span> context.<span style="color:#900;font-weight:bold">WithCancel</span>(context.<span style="color:#900;font-weight:bold">Background</span>())
+	<span style="color:#000;font-weight:bold">defer</span> <span style="color:#900;font-weight:bold">cancel</span>()
+
+	response, err <span style="color:#000;font-weight:bold">:=</span> client.<span style="color:#900;font-weight:bold">CreateNamespace</span>(ctx, <span style="color:#000;font-weight:bold">&amp;</span>emq.CreateNamespaceRequest{
+		Namespace: <span style="color:#d14">&#34;foo&#34;</span>,
+	})
+	<span style="color:#000;font-weight:bold">if</span> err <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">nil</span> {
+		<span style="color:#0086b3">panic</span>(err)
+	}
+
+	_ = response
+}</code></pre></div></div>
+
+<h3 id="additional-protocols">Additional protocols</h3>
+
+<p>Support for additional protocols is planned. At the moment planned protocols are:</p>
+
+<ul>
+<li>AMQP 1.0 - it would seem that AMQP 1.0 is just another version of AMQP 0.9.1, they&rsquo;re in essence completely different protocols (different semantics, different wire representations), although developed by the same working group and both targeted for messaging (AMQP 0.9.1 was chosen to be implemented first as it&rsquo;s used more),</li>
+<li>HTTP - simple protocol, albeit not intended for messages (if you look into <code>emq.proto</code>, you&rsquo;ll see that all RPC calls are annotated with HTTP verbs and paths, it should be easy to generate HTTP service using <a href="https://github.com/grpc-ecosystem/grpc-gateway">grpc-gateway</a>).</li>
+<li>MQTT - protocol mostly used for <a href="https://en.wikipedia.org/wiki/Internet_of_things">IoT</a> and compute-/memory-constrained devices.</li>
+</ul>
 
 
             <hr/>

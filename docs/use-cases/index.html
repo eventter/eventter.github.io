@@ -98,7 +98,7 @@
         <div id="hero">
             <h1> Use Cases </h1>
             <p class="hero-lead">
-                Learn what EventterMQ features make it good for particular use cases.
+                Learn what EventterMQ features make it good for particular use cases
             </p>
 
         </div>
@@ -133,7 +133,7 @@ headingSelector: 'h3'
 
 <p>When you need to process reliably jobs that can fail, are resource-intensive, need to have limited concurrency, or whose producers are written in different programming language (platform) than consumers, you probably will use some sort of messaging broker. Popular products for this are <a href="http://www.rabbitmq.com/">RabbitMQ</a> and <a href="http://activemq.apache.org/">ActiveMQ</a>.</p>
 
-<p>EventterMQ can be used for this as well. It supports standardized messaging protocols like <a href="/docs/amqp-0-9-1/">AMQP 0.9.1</a> (like RabbitMQ) and (plans to support) AMQP 1.0 (like ActiveMQ), so it can be used in-place replacement of these messaging brokers.</p>
+<p>EventterMQ can be used for this as well. It supports standardized messaging protocols like <a href="https://eventter.io/docs/amqp-0-9-1/">AMQP 0.9.1</a> (like RabbitMQ) and (plans to support) AMQP 1.0 (like ActiveMQ), so it can be used in-place replacement of these messaging brokers.</p>
 
 <p>Unlike many single-purpose job queues and general messaging brokers, EventterMQ is designed from the start to be run in distributed fashion to be highly available even when servers fail.</p>
 
@@ -146,6 +146,10 @@ headingSelector: 'h3'
 <h3 id="event-tracking-planned">Event tracking (planned)</h3>
 
 <p>Website and mobile-app user activity tracking (event tracking) generates heaps of data. Storing this type of data reliably, densely and on the budget often requires a lot of infrastructure to be set up. EventterMQ&rsquo;s storage encoding adds negligible overhead to raw stored data. Replication ensures that data are safely saved even in case of server/disk failures. EventterMQ plans to add support for another type of retention period - archival retention period. Archived segments will be compressed and moved to, mostly cheaper, object storage solutions like AWS S3, Google Cloud Storage etc. There they can reside until they need to be accessed again.</p>
+
+<h3 id="what-next">What next?</h3>
+
+<p>Learn about <a href="https://eventter.io/docs/protocols/">protocols</a> the broker supports. Or how it achieves fault-tolerance using <a href="https://eventter.io/docs/clustering/">clustering</a>.</p>
 
 
             <hr/>

@@ -17,15 +17,11 @@
       <pubDate>Thu, 27 Dec 2018 14:30:01 +0100</pubDate>
       
       <guid>https://eventter.io/docs/getting-started/</guid>
-      <description>Installation Build from source You will need:
- Git Go (1.11 or newer)  First download source code from the project public repository:
-git clone https://github.com/eventter/eventter.git  Then go to the root of the downloaded repository and build eventtermq binary:
-go build -o eventtermq ./bin/eventtermq  Docker TODO
-Topics TODO
-Consumer groups TODO
-Publishing to topics TODO
-Subscribing to consumer groups TODO
-What next? TODO</description>
+      <description>Installation EventterMQ doesn&amp;rsquo;t have a stable version yet. You can use latest Docker image that is automatically built from the latest source code, or you can build the broker binary yourself.
+Docker Docker image can be pulled from Docker Hub.
+$ docker pull eventter/mq  To start the broker, run:
+$ docker run --name emq-broker -p 16000:16000 -d eventter/mq  Build from source You will need:
+ Git Go (1.</description>
     </item>
     
     <item>
@@ -34,23 +30,44 @@ What next? TODO</description>
       <pubDate>Thu, 27 Dec 2018 16:11:09 +0100</pubDate>
       
       <guid>https://eventter.io/docs/use-cases/</guid>
-      <description>Work Queues TODO
-Publish/subscribe TODO
-RPC TODO
-Event Sourcing TODO
-Event Tracking, Metrics, Logging TODO</description>
+      <description>TODO</description>
     </item>
     
     <item>
-      <title>Protocols / API</title>
+      <title>Protocols</title>
       <link>https://eventter.io/docs/protocols/</link>
       <pubDate>Thu, 27 Dec 2018 15:34:04 +0100</pubDate>
       
       <guid>https://eventter.io/docs/protocols/</guid>
       <description>AMQP 0.9.1 TODO
-AMQP 1.0 TODO
-MQTT TODO
 gRPC TODO</description>
+    </item>
+    
+    <item>
+      <title>Clustering</title>
+      <link>https://eventter.io/docs/clustering/</link>
+      <pubDate>Fri, 28 Dec 2018 16:16:19 +0100</pubDate>
+      
+      <guid>https://eventter.io/docs/clustering/</guid>
+      <description>TODO</description>
+    </item>
+    
+    <item>
+      <title>AMQP 0.9.1</title>
+      <link>https://eventter.io/docs/amqp-0-9-1/</link>
+      <pubDate>Fri, 28 Dec 2018 13:00:38 +0100</pubDate>
+      
+      <guid>https://eventter.io/docs/amqp-0-9-1/</guid>
+      <description>TODO</description>
+    </item>
+    
+    <item>
+      <title>gRPC</title>
+      <link>https://eventter.io/docs/grpc/</link>
+      <pubDate>Fri, 28 Dec 2018 16:21:28 +0100</pubDate>
+      
+      <guid>https://eventter.io/docs/grpc/</guid>
+      <description>TODO</description>
     </item>
     
   </channel>

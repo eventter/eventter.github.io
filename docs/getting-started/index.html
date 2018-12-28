@@ -98,7 +98,7 @@
         <div id="hero">
             <h1> Getting Started </h1>
             <p class="hero-lead">
-                How to start the broker, send, and receive messages.
+                In this tutorial you will learn how to install the broker, how it approaches messaging, and how to send and receive messages.
             </p>
 
         </div>
@@ -129,6 +129,20 @@ headingSelector: 'h3'
 
 <h3 id="installation">Installation</h3>
 
+<p>EventterMQ doesn&rsquo;t have a stable version yet. You can use latest Docker image that is automatically built from the latest source code, or you can build the broker binary yourself.</p>
+
+<h4 id="docker">Docker</h4>
+
+<p>Docker image can be <a href="https://hub.docker.com/r/eventter/mq/">pulled from Docker Hub</a>.</p>
+
+<pre><code class="language-sh">$ docker pull eventter/mq
+</code></pre>
+
+<p>To start the broker, run:</p>
+
+<pre><code class="language-sh">$ docker run --name emq-broker -p 16000:16000 -d eventter/mq
+</code></pre>
+
 <h4 id="build-from-source">Build from source</h4>
 
 <p>You will need:</p>
@@ -140,37 +154,181 @@ headingSelector: 'h3'
 
 <p>First download source code from the project public repository:</p>
 
-<pre><code class="language-sh">git clone https://github.com/eventter/eventter.git
+<pre><code class="language-sh">$ git clone https://github.com/eventter/eventter.git
 </code></pre>
 
 <p>Then go to the root of the downloaded repository and build <code>eventtermq</code> binary:</p>
 
-<pre><code class="language-sh">go build -o eventtermq ./bin/eventtermq
+<pre><code class="language-sh">$ go build -o eventtermq ./bin/eventtermq
 </code></pre>
 
-<h4 id="docker">Docker</h4>
+<p>To start the broker, run:</p>
 
-<p>TODO</p>
+<pre><code class="language-sh">$ eventermq --dir ./data
+</code></pre>
 
-<h3 id="topics">Topics</h3>
+<h3 id="messaging-overview">Messaging overview</h3>
 
-<p>TODO</p>
+<p>The broker supports multiple protocols for sending and receiving messages, see <a href="/docs/protocols/">Protocols</a> to learn about which protocols are supported. In this article we will use its native <a href="https://grpc.io/">gRPC</a> API through CLI interface.</p>
 
-<h3 id="consumer-groups">Consumer groups</h3>
+<p>The CLI uses the same binary as the broker. If you started the broker in Docker using the command above, please add following alias to your shell:</p>
 
-<p>TODO</p>
+<pre><code class="language-sh">$ alias eventtermq=&quot;docker run --name emq-client --link emq-broker --rm eventter/mq --host emq-broker&quot;
+</code></pre>
 
-<h3 id="publishing-to-topics">Publishing to topics</h3>
+<p>If you used other messaging products, you might be used to different models how messages are sent:</p>
 
-<p>TODO</p>
+<ol>
+<li>First, simplest, approach is that messages are sent to <strong>queues</strong> (linear ordered data structure, messages are <strong>pushed to the front</strong>) as well as received from these queues (messages are <strong>popped from the back</strong>, i.e. from first to last). There is 1-to-1 relationship between producers and consumers.</li>
+<li>If you want to <strong>decouple</strong> producers and consumers, you need to add a <strong>level of indirection</strong>. For example <a href="/docs/amqp-0-9-1/">AMQP 0.9.1</a> (which is also supported by EventterMQ, see linked article to learn how you can communicate with the broker using AMQP) does this by adding so-called <strong>exchanges</strong>. Producers send messages to exchanges. Exchanges, through defined rules, route messages to zero or more queues. Each queue receives a <strong>copy</strong> of the messages.</li>
+<li>Or you can do it the other way around, messages are sent to <strong>topics</strong> (similar to queues in that they&rsquo;re linear ordered data structure, messages are <strong>pushed to the front</strong>, however, unlike queues messages can be <strong>read from any point</strong>, not only popped from the back). Then client(s) that want to receive messages form <strong>consumer groups</strong>. Each consumer group reads each message from the topic once.</li>
+</ol>
 
-<h3 id="subscribing-to-consumer-groups">Subscribing to consumer groups</h3>
+<p>EventterMQ chose third approach. Its benefits are:</p>
 
-<p>TODO</p>
+<ul>
+<li>each message is stored once (not copied to multiple queues),</li>
+<li>topics retain messages and may be read multiple times,</li>
+<li>consumer groups may start reading past messages, not only new ones.</li>
+</ul>
+
+<h3 id="create-topic">Create topic</h3>
+
+<p>So first you need to create a topic:</p>
+
+<pre><code class="language-sh">$ eventtermq create-topic my-topic --shards 1 --replication-factor 3
+{
+  &quot;ok&quot;: true,
+  &quot;index&quot;: 15
+}
+</code></pre>
+
+<blockquote>
+<p><strong>Note: Namespaces</strong></p>
+
+<p>EventterMQ is designed to be multi-tenant. Topics (and consumer groups as well) are scoped by namespaces. By default on a new cluster an empty namespace called <code>default</code> is created.</p>
+
+<p>CLI commands use this namespace by default. If you want to create different namespace, run:</p>
+
+<pre><code class="language-sh">$ eventtermq create-namespace my-namespace
+</code></pre>
+
+<p>Then add option <code>--namespace</code> to CLI invocations, e.g.:</p>
+
+<pre><code class="language-sh">$ eventtermq create-topic my-topic --namespace my-namespace --shards 1 --replication-factor 3 --retention 24h
+</code></pre>
+</blockquote>
+
+<h4 id="shards">Shards</h4>
+
+<p>Topics are comprised of segments. Segments are where messages are physically stored. Topic has zero or more segments that are open. Open segments are the ones that new messages are appended to. <code>--shards</code> option configures how many open segments topic can have. The more open segments topic has, greater the throughput of messages. However, if there are more than one open segment, ordering of the messages is not guaranteed.</p>
+
+<h4 id="replication-factor">Replication factor</h4>
+
+<p>Segments are limited in size (64 MiB). If open segment reaches size limit, no new messages can be written to it and it gets <strong>rotated</strong> (i.e. it gets closed and a new segment is opened instead). Segments act as a unit of replication. <code>--replication-factor</code> specifies how many copies of data are there to be in the cluster. If you use replication factor of 1, there is only one copy of the data, so if the broker node fails, you can loose messages.</p>
+
+<p>Replication factor 3 means that there are 3 copies. For an open segment it means that one node acts as a primary - it receives new messages and appends them to the segment as well as responds to the read requests -, and 2 more nodes (if there are) replicate data written to the primary. If the primary fails, one of the replicas (one that is most up-to-date) is chosen to act as a new primary.</p>
+
+<p>When segments is closed, any node that with fully replicated data can act as primary - read requests are routed randomly to such nodes.</p>
+
+<h4 id="retention-period">Retention period</h4>
+
+<p>Hard drives and SSDs are cheap. However, storage is not infinite. Therefore if topics could only grow in size by rotating segments, it would be impractical. Retention period specifies for how long closed segments will be kept around before deleting their data files. In the example above, retention period is set to 24 hours. Therefore, if segment was closed longer than 24 hours ago and no consumer group reads from it anymore (either it wasn&rsquo;t read by any consumer, or it was entirely consumed by all consumer groups), it will be deleted.</p>
+
+<p>If you set retention to zero, it means that data will be retained forever. If you want to delete segments as soon as possible, set retention to lowest possible positive value - 1 nanosecond.</p>
+
+<p>Open segments are never deleted, even if they exceed specified retention period. Therefore, if you don&rsquo;t use topic for storage, only for messaging, you can estimate its total disk usage as <code>shards * 64 MiB</code>.</p>
+
+<h3 id="send-message">Send message</h3>
+
+<p>After you&rsquo;ve created a topic, you can send messages to it (in messaging parlance, <strong>publish</strong> messages to it):</p>
+
+<pre><code class="language-sh">$ eventtermq publish my-topic &quot;hello, world&quot;
+{
+  &quot;ok&quot;: true
+}
+</code></pre>
+
+<h3 id="create-consumer-group">Create consumer group</h3>
+
+<p>As written earlier, messages are received by <strong>consumer groups</strong>. To create consumer group, run:</p>
+
+<pre><code class="language-sh">$ eventtermq create-consumer-group my-cg --bind my-topic --since -1h --size 1024
+{
+  &quot;ok&quot;: true,
+  &quot;index&quot;: 34
+}
+</code></pre>
+
+<p>Consumer group is a task that runs on one of the nodes in the cluster and manages reading messages from bound topics. Consumer group may be bound to no topic - if so, consumer won&rsquo;t every receive any message.</p>
+
+<h4 id="bindings">Bindings</h4>
+
+<p>Binding connects consumer group to a topic and specifies what messages read from the topic&rsquo;s segments will be sent to consumers. Binding contains name of the topic (topic must exist at the time the consumer group is being created), <strong>exchange type</strong> (and possibly for certain exchange types additional data).</p>
+
+<p>Exchange types are those as defined in <a href="/docs/amqp-0-9-1/">AMQP 0.9.1</a>:</p>
+
+<ul>
+<li><strong>fanout</strong> exchange type matches all messages,</li>
+<li><strong>direct</strong> compares binding&rsquo;s <strong>routing key</strong> with message&rsquo;s routing key - if routing keys are equal, the message matches,</li>
+<li><strong>topic</strong> is similar to <em>direct</em>, it compares <em>routing keys</em>, however, topic routing keys are separated by periods, and instead of specific words, they may contain wildcards (<code>*</code> matches any single word, <code>#</code> matches zero or more words),</li>
+<li><strong>headers</strong> compares message&rsquo;s headers whether they match.</li>
+</ul>
+
+<p>If any binding matches the message, it&rsquo;s sent to consumers. If multiple bindings would match, message is sent only once.</p>
+
+<p>When creating consumer group from CLI, <code>--bind</code> creates <em>fanout</em> binding, <code>--bind-direct</code> <em>direct</em> binding, and <code>--bind-topic</code> <em>topic</em> binding. <em>Headers</em> exchange type is not used very often, and so cannot be created from CLI. If you want to create consumer group with <em>headers</em> exchange type, use directly one of <a href="/docs/protocols/">supported protocols</a>.</p>
+
+<h4 id="since">Since</h4>
+
+<p>Topics retain messages for the specified retention period. Consumer group, when created, may start to read messages only new messages, or start from past point in time (or event future point in time).</p>
+
+<p>If you set CLI option <code>--since -1h</code>, messages will be sent to consumers as long as they&rsquo;re newer than 1 hour ago.</p>
+
+<h4 id="size">Size</h4>
+
+<p>When consumer group runs, before it sends messages to consumers, it reads messages from all relevant segments into memory. <code>--size</code> specified how many messages will be kept in memory at the time.</p>
+
+<p>Once a message is sent to the consumer, it&rsquo;s marked to be in processing. But it&rsquo;s still kept in consumer group&rsquo;s message buffer until consumer:</p>
+
+<ul>
+<li><strong>cancels</strong> its subscription (also happens when connection fails / process dies) - message is then re-sent to other consumers,</li>
+<li>sends <strong>acknowledgement</strong> (<em>ack</em>) - message is free&rsquo;d from consumer group buffer and marked never to be sent other consumer,</li>
+<li>sends <strong>rejection</strong> (<em>nack</em>) - message is re-sent to other consumers.</li>
+</ul>
+
+<p>Therefore there cannot be more messages <em>in-flight</em> than the size of the consumer group. Default consumer group size is <code>1024</code>.</p>
+
+<h3 id="receive-message">Receive message</h3>
+
+<p>Finally when you want to receive messages from consumer group, you create subscription:</p>
+
+<pre><code class="language-sh">$ eventtermq subscribe my-cg
+{
+  &quot;topic&quot;: {
+    &quot;namespace&quot;: &quot;default&quot;,
+    &quot;name&quot;: &quot;my-topic&quot;
+  },
+  &quot;message&quot;: {
+    &quot;data&quot;: &quot;aGVsbG8sIHdvcmxk&quot;
+  }
+}
+^C
+</code></pre>
+
+<blockquote>
+<p><strong>Note: CLI</strong></p>
+
+<p>Messages are treated by the broker as opaque binary data. CLI outputs data in JSON as Base64-serialized string. When you decode <code>aGVsbG8sIHdvcmxk</code>, you will get <code>hello, world</code> sent earlier.</p>
+
+<p>CLI <code>subscribe</code> command creates subscription in auto-acknowledgement mode, so every message sent to the client will be automatically marked as acknowledged and won&rsquo;t be ever sent to any other consumer again.</p>
+</blockquote>
 
 <h3 id="what-next">What next?</h3>
 
-<p>TODO</p>
+<p>In your application code you probably don&rsquo;t want to communicate with the broker by executing CLI commands. Learn about <a href="/docs/protocols/">protocols</a> the broker supports and libraries to use.</p>
+
+<p>Do you still hesitate whether EventterMQ is right tool for the job? Read about its <a href="/docs/use-cases/">use cases</a>.</p>
 
 
             <hr/>

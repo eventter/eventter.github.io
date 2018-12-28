@@ -18,6 +18,21 @@
   </url>
   
   <url>
+    <loc>https://eventter.io/docs/clustering/</loc>
+    <lastmod>2018-12-28T16:16:19+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://eventter.io/docs/amqp-0-9-1/</loc>
+    <lastmod>2018-12-28T13:00:38+01:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://eventter.io/docs/grpc/</loc>
+    <lastmod>2018-12-28T16:21:28+01:00</lastmod>
+  </url>
+  
+  <url>
     <loc>https://eventter.io/categories/</loc>
     <priority>0</priority>
   </url>

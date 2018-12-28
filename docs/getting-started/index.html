@@ -297,7 +297,7 @@ headingSelector: 'h3'
 <li>sends <strong>rejection</strong> (<em>nack</em>) - message is re-sent to other consumers.</li>
 </ul>
 
-<p>Therefore there cannot be more messages <em>in-flight</em> than the size of the consumer group. Default consumer group size is <code>1024</code>.</p>
+<p>Therefore there cannot be more messages <em>in-flight</em> than the size of the consumer group. Default consumer group size is set for consume group buffer to occupy about 1 MiB of memory (which is at the time of writing ~10 000 items).</p>
 
 <h3 id="receive-message">Receive message</h3>
 

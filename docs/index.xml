@@ -30,7 +30,9 @@ $ docker run --name emq-broker -p 16000:16000 -d eventter/mq  Build from source 
       <pubDate>Thu, 27 Dec 2018 16:11:09 +0100</pubDate>
       
       <guid>https://eventter.io/docs/use-cases/</guid>
-      <description>TODO</description>
+      <description>Here goes list of use cases EventterMQ is good for.
+Job queues When you need to process reliably jobs that can fail, are resource-intensive, need to have limited concurrency, or whose producers are written in different programming language (platform) than consumers, you probably will use some sort of messaging broker. Popular products for this are RabbitMQ and ActiveMQ.
+EventterMQ can be used for this as well. It supports standardized messaging protocols like AMQP 0.</description>
     </item>
     
     <item>

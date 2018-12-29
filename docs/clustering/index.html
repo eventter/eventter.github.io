@@ -98,7 +98,7 @@
         <div id="hero">
             <h1> Clustering </h1>
             <p class="hero-lead">
-                
+                This guide will tell you how to create local 3-node cluster of EventterMQ brokers in Docker. The same concepts can be applied when creating distributed clusters.
             </p>
 
         </div>
@@ -125,7 +125,153 @@ headingSelector: 'h3'
 
 
 
-            <p>TODO</p>
+            
+
+<p>EventterMQ is designed from the start to be run as a distributed service. Assumption is that the brokers in the cluster can reach each other over low-latency LAN. More complex cluster topologies (e.g. different regions, different availability zones in a single region) are not implemented yet, so at the moment, it isn&rsquo;t recommended to run cluster over WAN.</p>
+
+<h3 id="network-topology">Network topology</h3>
+
+<p>Brokers are expected to be run in a trusted private network. Therefore they do not use authentication or encryption for inter-broker communication. For our local cluster we will create such new network in Docker:</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker network create emq</code></pre></div>
+<blockquote>
+<p><strong>Note: Docker Swarm</strong></p>
+
+<p>If you used <a href="https://docs.docker.com/engine/swarm/">Docker Swarm</a>, you could create <code>overlay</code> network driver and start containers on separate machines. Then you would have truly distributed cluster of brokers.</p>
+</blockquote>
+
+<h3 id="discovery">Discovery</h3>
+
+<p>Brokers run <a href="http://www.cs.cornell.edu/projects/Quicksilver/public_pdfs/SWIM.pdf">SWIM</a> gossip protocol for node discovery. This protocol uses <strong>both TCP &amp; UDP</strong> on port 16000 (or different port you choose at the broker startup), therefore configure your firewall rules accordingly.</p>
+
+<p>To create local cluster, first create directory for persistent data:</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ mkdir -p <span style="color:#d14">`</span><span style="color:#0086b3">pwd</span><span style="color:#d14">`</span>/data</code></pre></div>
+<p>Then start the first broker:</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker run -d <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --network emq <span style="color:#d14">\
+</span><span style="color:#d14"></span>    -v <span style="color:#d14">`</span><span style="color:#0086b3">pwd</span><span style="color:#d14">`</span>/data:/data <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --name emq-0 <span style="color:#d14">\
+</span><span style="color:#d14"></span>    eventter/mq <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --dir /data/0 <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --advertise-host emq-0</code></pre></div>
+<p>The broker will write its data to <code>/data/0</code> directory, bind to all interfaces on default port (i.e. 16000) and tell other nodes that it can be reached on host named <code>emq-0</code>. Docker network ensures that the host <code>emq-0</code> resolves to the IP address of the container.</p>
+
+<p>It&rsquo;s important that the broker reports to other nodes the right address it can be reached on. Configure this using <code>--host</code> &amp; <code>--advertise-host</code> arguments:</p>
+
+<table>
+<thead>
+<tr>
+<th>Arguments</th>
+<th><code>--host</code> NOT specified</th>
+<th><code>--host</code> specified</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><span style="white-space:nowrap;font-weight:bold;"><code>--advertise-host</code> NOT specified</span></td>
+<td>The broker listens on all interfaces and advertises to other brokers canonical hostname as reported by operating system.</td>
+<td>The broker listens on the IP address or hostname specified by <code>--host</code> option and advertises this value to other nodes.</td>
+</tr>
+
+<tr>
+<td><span style="white-space:nowrap;font-weight:bold;"><code>--advertise-host</code> specified</span></td>
+<td>The broker listens on all interfaces and advertises to other brokers the value specified by <code>--advertise-host</code>. <strong>Recommended for most cases.</strong></td>
+<td>The broker listens on the IP address or hostname specified by <code>--host</code> option and advertises to other brokers value specified by <code>--advertise-host</code>.</td>
+</tr>
+</tbody>
+</table>
+
+<p><code>--dir</code> and <code>--advertise-host</code> is pretty much all you need to specify for broker to start.</p>
+
+<p>Next start other brokers:</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker run -d <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --network emq <span style="color:#d14">\
+</span><span style="color:#d14"></span>    -v <span style="color:#d14">`</span><span style="color:#0086b3">pwd</span><span style="color:#d14">`</span>/data:/data <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --name emq-1 <span style="color:#d14">\
+</span><span style="color:#d14"></span>    eventter/mq <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --dir /data/1 <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --advertise-host emq-1 <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --join emq-0:16000
+$ docker run -d <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --network emq <span style="color:#d14">\
+</span><span style="color:#d14"></span>    -v <span style="color:#d14">`</span><span style="color:#0086b3">pwd</span><span style="color:#d14">`</span>/data:/data <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --name emq-2 <span style="color:#d14">\
+</span><span style="color:#d14"></span>    eventter/mq <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --dir /data/2 <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --advertise-host emq-2 <span style="color:#d14">\
+</span><span style="color:#d14"></span>    --join emq-0:16000</code></pre></div>
+<p><code>--join</code> specifies <code>host:port</code> combination of any node in the cluster.</p>
+
+<h3 id="cluster-state">Cluster state</h3>
+
+<p>Nodes share between themselves a structure called <strong>cluster state</strong>. Cluster state contains node addresses, topics, consumer groups etc. This structure is agreed on using consensus algorithm called <a href="https://raft.github.io/">Raft</a>. You can view the current value using <code>dump</code> CLI command (it issues RPC request to the node and prints response):</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker run --rm --network emq --name emq-client eventter/mq --host emq-0 <span style="color:#008080">dump</span>
+<span style="color:#000;font-weight:bold">===</span> Cluster <span style="color:#008080">state</span> <span style="color:#000;font-weight:bold">===</span>
+index: <span style="color:#099">60</span>
+namespaces: &lt;
+  name: <span style="color:#d14">&#34;default&#34;</span>
+&gt;
+nodes: &lt;
+  id: <span style="color:#099">4788019685657542095</span>
+  address: <span style="color:#d14">&#34;172.19.0.2:16000&#34;</span>
+  state: ALIVE
+&gt;
+nodes: &lt;
+  id: <span style="color:#099">10681121214306649065</span>
+  address: <span style="color:#d14">&#34;172.19.0.4:16000&#34;</span>
+  state: ALIVE
+&gt;
+nodes: &lt;
+  id: <span style="color:#099">11191473106259109224</span>
+  address: <span style="color:#d14">&#34;172.19.0.3:16000&#34;</span>
+  state: ALIVE
+&gt;
+
+
+<span style="color:#000;font-weight:bold">===</span> <span style="color:#008080">Segments</span> <span style="color:#000;font-weight:bold">===</span></code></pre></div>
+<p>As you can see, cluster state contains three nodes forming the cluster. (Note: Your node IDs and addresses may differ.) If you use <code>dump</code> on any node, you should see the same result.</p>
+
+<p>Now if you, for example, create a topic:</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker run --rm --network emq --name emq-client eventter/mq --host emq-0 create-topic my-topic</code></pre></div>
+<p>It will be reflected in cluster state on any node (see that request to create a topic was issued to node <code>emq-0</code>, and dump to node <code>emq-2</code>):</p>
+<div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker run --rm --network emq --name emq-client eventter/mq --host emq-2 <span style="color:#008080">dump</span>
+<span style="color:#000;font-weight:bold">===</span> Cluster <span style="color:#008080">state</span> <span style="color:#000;font-weight:bold">===</span>
+index: <span style="color:#099">823</span>
+namespaces: &lt;
+  name: <span style="color:#d14">&#34;default&#34;</span>
+  topics: &lt;
+    name: <span style="color:#d14">&#34;my-topic&#34;</span>
+    shards: <span style="color:#099">1</span>
+    replication_factor: <span style="color:#099">3</span>
+    retention: &lt;
+      nanos: <span style="color:#099">1</span>
+    &gt;
+    default_exchange_type: <span style="color:#d14">&#34;fanout&#34;</span>
+  &gt;
+&gt;
+nodes: &lt;
+  id: <span style="color:#099">4788019685657542095</span>
+  address: <span style="color:#d14">&#34;172.19.0.2:16000&#34;</span>
+  state: ALIVE
+&gt;
+nodes: &lt;
+  id: <span style="color:#099">10681121214306649065</span>
+  address: <span style="color:#d14">&#34;172.19.0.4:16000&#34;</span>
+  state: ALIVE
+&gt;
+nodes: &lt;
+  id: <span style="color:#099">11191473106259109224</span>
+  address: <span style="color:#d14">&#34;172.19.0.3:16000&#34;</span>
+  state: ALIVE
+&gt;
+
+
+<span style="color:#000;font-weight:bold">===</span> <span style="color:#008080">Segments</span> <span style="color:#000;font-weight:bold">===</span></code></pre></div>
+<h3 id="what-next">What next?</h3>
+
+<p>Clients can connect to any node in the cluster and their requests will be forwarded to appropriate node that contains related data (e.g. open topic segments when publishing new message).</p>
+
+<p>Learn more about <a href="https://eventter.io/docs/protocols/">protocols</a> you can use. Or read about basic concepts in <a href="https://eventter.io/docs/getting-started/">Getting Started</a>.</p>
 
 
             <hr/>

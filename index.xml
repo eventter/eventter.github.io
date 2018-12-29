@@ -51,7 +51,8 @@ EventterMQ can be used for this as well. It supports standardized messaging prot
       <pubDate>Fri, 28 Dec 2018 16:16:19 +0100</pubDate>
       
       <guid>https://eventter.io/docs/clustering/</guid>
-      <description>TODO</description>
+      <description>EventterMQ is designed from the start to be run as a distributed service. Assumption is that the brokers in the cluster can reach each other over low-latency LAN. More complex cluster topologies (e.g. different regions, different availability zones in a single region) are not implemented yet, so at the moment, it isn&amp;rsquo;t recommended to run cluster over WAN.
+Network topology Brokers are expected to be run in a trusted private network.</description>
     </item>
     
     <item>

@@ -98,7 +98,7 @@
         <div id="hero">
             <h1> AMQP 0.9.1 </h1>
             <p class="hero-lead">
-                
+                AMQP 0.9.1 chooses a slightly different messaging model than EventterMQ. Learn about AMQ model and how it maps to EvennterMQ's model.
             </p>
 
         </div>
@@ -125,7 +125,461 @@ headingSelector: 'h3'
 
 
 
-            <p>TODO</p>
+            
+
+<p>In <a href="https://eventter.io/docs/getting-started/#overview">messaging overview</a> we&rsquo;ve learnt about two distinct models that allow decoupling of message producers and consumers. As said in the overview, AMQP chose <strong>exchange-queue</strong> model, but EventterMQ uses <strong>topic-consumer group</strong> model. In this article we&rsquo;ll describe AMQ model in depth, explain how it maps to topics &amp; consumer groups and show examples how to connect to the broker using AMQP.</p>
+
+<blockquote>
+<p><strong>Note: Advanced Message Queueing Protocol</strong></p>
+
+<p>When this article refers to AMQP, it refers to <a href="http://www.amqp.org/specification/0-9-1/amqp-org-download">AMQP 0.9.1</a>. There&rsquo;s also <a href="http://www.amqp.org/specification/1.0/amqp-org-download">AMQP 1.0</a>. Although sharing the same name, these are, in essence, completely different protocols. Both define binary protocols for messaging use cases, however, AMQP 0.9.1 defines shared semantics for AMQ entities and how client apps and brokers interact to send and receive messages, AMQP 1.0 centers around connection establishment, multiplexing and flow control, and leaves semantics of entities up to the concrete implementations.</p>
+</blockquote>
+
+<h3 id="amq-model">AMQ model</h3>
+
+<p>AMQP starts with defining certain entities brokers support and how client apps may interact with these. AMQP brokers are meant to be multi-tenant, therefore all entities of AMQ model are scoped by <strong>virtual hosts</strong> (or <em>vhosts</em> for short). Virtual hosts naturally map to EventterMQ&rsquo;s namespaces. Every client connection works with exactly one virtual host. Most client libraries default to virtual host names <code>/</code> (just slash). Because <code>/</code> isn&rsquo;t a valid namespace name in EventterMQ, it gets translated to namespace named <code>default</code>. AMQP doesn&rsquo;t allow client apps to create new virtual hosts or delete existing virtual hosts. To create namespaces, ergo AMQP virtual hosts, use <a href="https://eventter.io/docs/getting-started/#create-topic"><code>create-namespace</code> CLI command</a>.</p>
+
+<p>Messages in AMQ world are published to <strong>exchanges</strong>. Exchanges route messages to <strong>queues</strong>. Consuming apps then read messages from queues. Exchange do not store messages, they only act as a layer that looks at message <em>envelope</em>, which consists of <strong>message properties</strong> (statically defined by the protocol) and <strong>message headers</strong> (dynamic key-value pairs attached to the message by the sending app), compares the information using its <strong>exchange type</strong> with <strong>queue bindings</strong>, and finally <strong>pushes</strong> message to be <strong>stored by matching queues</strong>.</p>
+
+<blockquote>
+<p><strong>Note: RabbitMQ&rsquo;s <code>x-delayed</code> exchange</strong></p>
+
+<p>In RabbitMQ certain exchange types can in fact store messages. For example, <a href="https://github.com/rabbitmq/rabbitmq-delayed-message-exchange">delayed exchange plugin</a> adds exchange type <code>x-delayed</code> that routes messages to appropriate queues after the time specified by <code>x-delay</code> message header has passed. In the meantime, the message is stored by the exchange, not any queue.</p>
+</blockquote>
+
+<p>There are different exchange types defined by the specification:</p>
+
+<ul>
+<li><strong>fanout</strong> - simplest exchange type - routes all messages to all bound queues,</li>
+<li><strong>direct</strong> - looks at <strong>routing key</strong> message property and if it exactly matches routing key specified by the binding, routes message to the bound queue,</li>
+<li><strong>topic</strong> - also works with routing key, however, uses wildcard matching with <code>*</code> and <code>#</code> as <em>word</em> placeholders (words are separated by dots, <code>*</code> means single word, <code>#</code> means zero or more words; e.g. <code>foo.*</code> matches <code>foo.bar</code>, <code>foo.baz</code>, but doesn&rsquo;t match <code>foo.qux.xyz</code>; <code>foo.#</code> matches <code>foo</code>, <code>foo.bar</code>, <code>foo.baz</code> as well as <code>foo.qux.xyz</code>, but doesn&rsquo;t match <code>bar.xyz</code>),</li>
+<li><strong>headers</strong> - matches <em>message headers</em> with <strong>binding arguments</strong> (dynamic key-value pairs as well).</li>
+</ul>
+
+<p>EventterMQ chose exactly opposite model. Messages are stored by <strong>topics</strong> and then <strong>pulled</strong> by <strong>consumer groups</strong> using bindings. Albeit the models differ, AMQ model can be represented by EventterMQ&rsquo;s. Exchanges are represented as topics and queues as consumer groups.</p>
+
+<p>One slight difference is that in AMQ, bindings act according to type of the exchange and <em>routing key</em>, or <em>arguments</em> specified in binding. Consumer group bindings specify all of <em>exchange type</em>, <em>routing key</em>, and <em>arguments</em>. For interoperability reasons, topics define <strong>default exchange type</strong> that is set to consumer group bindings if not specified.</p>
+
+<h3 id="security">Security</h3>
+
+<p>At the moment, EventterMQ doesn&rsquo;t require client authentication to manage broker entities or publish messages. AMQP connections, on the other hand, require client authentication. The broker does SASL authentication handshake using <code>PLAIN</code> and <code>AMQPLAIN</code> mechanisms, both require client to specify username and password, that are used by client libraries, however, it accepts any combination of username and password.</p>
+
+<h3 id="connection">Connection</h3>
+
+<p>IANA-assigned port for AMQP is 5672. EventterMQ by default doesn&rsquo;t use this port. Instead it chooses port for its <a href="https://eventter.io/docs/protocols/#grpc">gRPC</a> service + 1. Default port for gRPC is 16000, so <strong>default port for AMQP is 16001</strong>.</p>
+
+<p>See <a href="https://eventter.io/docs/protocols/#amqp-0-9-1">list of AMQP 0.9.1 client libraries</a>.</p>
+
+<nav class="tabs" data-component="tabs">
+    <ul><li class="active">
+                    <a href="#examples-amqp-0-9-1-connect-go">Go</a>
+                </li><li>
+                    <a href="#examples-amqp-0-9-1-connect-php">PHP</a>
+                </li></ul>
+</nav>
+<div id="examples-amqp-0-9-1-connect-go"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#000;font-weight:bold">package</span> example
+
+<span style="color:#000;font-weight:bold">import</span> (
+	<span style="color:#d14">&#34;github.com/pkg/errors&#34;</span>
+	<span style="color:#d14">&#34;github.com/streadway/amqp&#34;</span>
+)
+
+<span style="color:#000;font-weight:bold">func</span> <span style="color:#900;font-weight:bold">connect</span>() <span style="color:#458;font-weight:bold">error</span> {
+	conn, err <span style="color:#000;font-weight:bold">:=</span> amqp.<span style="color:#900;font-weight:bold">DialConfig</span>(<span style="color:#d14">&#34;amqp://127.0.0.1:16000&#34;</span>, amqp.Config{
+		Vhost: <span style="color:#d14">&#34;default&#34;</span>,
+	})
+	<span style="color:#000;font-weight:bold">if</span> err <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">nil</span> {
+		<span style="color:#000;font-weight:bold">return</span> errors.<span style="color:#900;font-weight:bold">Wrap</span>(err, <span style="color:#d14">&#34;dial failed&#34;</span>)
+	}
+	<span style="color:#000;font-weight:bold">defer</span> conn.<span style="color:#900;font-weight:bold">Close</span>()
+
+	<span style="color:#998;font-style:italic">// ... work with connection ...
+</span><span style="color:#998;font-style:italic"></span>
+	<span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nil</span>
+}</code></pre></div></div><div id="examples-amqp-0-9-1-connect-php"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-php" data-lang="php"><span style="color:#999;font-weight:bold;font-style:italic">&lt;?php</span>
+<span style="color:#000;font-weight:bold">use</span> Bunny\Client;
+
+<span style="color:#008080">$conn</span> <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">new</span> Client([
+    <span style="color:#d14">&#34;host&#34;</span> <span style="color:#000;font-weight:bold">=&gt;</span> <span style="color:#d14">&#34;127.0.0.1&#34;</span>,
+    <span style="color:#d14">&#34;port&#34;</span> <span style="color:#000;font-weight:bold">=&gt;</span> <span style="color:#099">16001</span>,
+    <span style="color:#d14">&#34;vhost&#34;</span> <span style="color:#000;font-weight:bold">=&gt;</span> <span style="color:#d14">&#34;default&#34;</span>,
+]);
+<span style="color:#008080">$conn</span><span style="color:#000;font-weight:bold">-&gt;</span><span style="color:#008080">connect</span>();
+
+<span style="color:#998;font-style:italic">// ... work with connection ...
+</span><span style="color:#998;font-style:italic"></span></code></pre></div></div>
+
+<p>Creating new TCP connections is costly, therefore AMQP is a multiplexed protocol - it allows multiple <strong>channels</strong> of communication to be present on the same underlying connection, think of channels as lightweight connections.</p>
+
+<p>To do actual work, you must open a new channel on the connection.</p>
+
+<nav class="tabs" data-component="tabs">
+    <ul><li class="active">
+                    <a href="#examples-amqp-0-9-1-channel-go">Go</a>
+                </li><li>
+                    <a href="#examples-amqp-0-9-1-channel-php">PHP</a>
+                </li></ul>
+</nav>
+<div id="examples-amqp-0-9-1-channel-go"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#000;font-weight:bold">package</span> example
+
+<span style="color:#000;font-weight:bold">import</span> (
+	<span style="color:#d14">&#34;github.com/pkg/errors&#34;</span>
+	<span style="color:#d14">&#34;github.com/streadway/amqp&#34;</span>
+)
+
+<span style="color:#000;font-weight:bold">func</span> <span style="color:#900;font-weight:bold">channel</span>() <span style="color:#458;font-weight:bold">error</span> {
+	conn, err <span style="color:#000;font-weight:bold">:=</span> amqp.<span style="color:#900;font-weight:bold">DialConfig</span>(<span style="color:#d14">&#34;amqp://127.0.0.1:16000&#34;</span>, amqp.Config{
+		Vhost: <span style="color:#d14">&#34;default&#34;</span>,
+	})
+	<span style="color:#000;font-weight:bold">if</span> err <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">nil</span> {
+		<span style="color:#000;font-weight:bold">return</span> errors.<span style="color:#900;font-weight:bold">Wrap</span>(err, <span style="color:#d14">&#34;dial failed&#34;</span>)
+	}
+	<span style="color:#000;font-weight:bold">defer</span> conn.<span style="color:#900;font-weight:bold">Close</span>()
+
+	channel, err <span style="color:#000;font-weight:bold">:=</span> conn.<span style="color:#900;font-weight:bold">Channel</span>()
+	<span style="color:#000;font-weight:bold">if</span> err <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">nil</span> {
+		<span style="color:#000;font-weight:bold">return</span> errors.<span style="color:#900;font-weight:bold">Wrap</span>(err, <span style="color:#d14">&#34;opening channel failed&#34;</span>)
+	}
+	<span style="color:#000;font-weight:bold">defer</span> channel.<span style="color:#900;font-weight:bold">Close</span>()
+
+	<span style="color:#998;font-style:italic">// ... work with channel ...
+</span><span style="color:#998;font-style:italic"></span>
+	<span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nil</span>
+}</code></pre></div></div><div id="examples-amqp-0-9-1-channel-php"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-php" data-lang="php"><span style="color:#999;font-weight:bold;font-style:italic">&lt;?php</span>
+<span style="color:#000;font-weight:bold">use</span> Bunny\Client;
+
+<span style="color:#008080">$conn</span> <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">new</span> Client([
+    <span style="color:#d14">&#34;host&#34;</span> <span style="color:#000;font-weight:bold">=&gt;</span> <span style="color:#d14">&#34;127.0.0.1&#34;</span>,
+    <span style="color:#d14">&#34;port&#34;</span> <span style="color:#000;font-weight:bold">=&gt;</span> <span style="color:#099">16001</span>,
+    <span style="color:#d14">&#34;vhost&#34;</span> <span style="color:#000;font-weight:bold">=&gt;</span> <span style="color:#d14">&#34;default&#34;</span>,
+]);
+<span style="color:#008080">$conn</span><span style="color:#000;font-weight:bold">-&gt;</span><span style="color:#008080">connect</span>();
+
+<span style="color:#008080">$channel</span> <span style="color:#000;font-weight:bold">=</span> <span style="color:#008080">$conn</span><span style="color:#000;font-weight:bold">-&gt;</span><span style="color:#008080">channel</span>();
+
+<span style="color:#998;font-style:italic">// ... work with channel ...
+</span><span style="color:#998;font-style:italic"></span></code></pre></div></div>
+
+<h3 id="exchanges-topics">Exchanges (topics)</h3>
+
+<p>Once you&rsquo;ve opened a channel, you can create exchanges (i.e. topics).</p>
+
+<nav class="tabs" data-component="tabs">
+    <ul><li class="active">
+                    <a href="#examples-amqp-0-9-1-exchange-go">Go</a>
+                </li><li>
+                    <a href="#examples-amqp-0-9-1-exchange-php">PHP</a>
+                </li></ul>
+</nav>
+<div id="examples-amqp-0-9-1-exchange-go"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#000;font-weight:bold">package</span> example
+
+<span style="color:#000;font-weight:bold">import</span> (
+	<span style="color:#d14">&#34;github.com/pkg/errors&#34;</span>
+	<span style="color:#d14">&#34;github.com/streadway/amqp&#34;</span>
+)
+
+<span style="color:#000;font-weight:bold">func</span> <span style="color:#900;font-weight:bold">exchange</span>(channel <span style="color:#000;font-weight:bold">*</span>amqp.Channel) <span style="color:#458;font-weight:bold">error</span> {
+	err <span style="color:#000;font-weight:bold">:=</span> channel.<span style="color:#900;font-weight:bold">ExchangeDeclare</span>(
+		<span style="color:#d14">&#34;my-exchange&#34;</span>, <span style="color:#998;font-style:italic">// name
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#d14">&#34;fanout&#34;</span>,      <span style="color:#998;font-style:italic">// type
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">true</span>,          <span style="color:#998;font-style:italic">// durable
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,         <span style="color:#998;font-style:italic">// auto-delete
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,         <span style="color:#998;font-style:italic">// internal
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,         <span style="color:#998;font-style:italic">// no-wait
+</span><span style="color:#998;font-style:italic"></span>		amqp.Table{
+			<span style="color:#d14">&#34;shards&#34;</span>:             <span style="color:#099">1</span>,
+			<span style="color:#d14">&#34;replication-factor&#34;</span>: <span style="color:#099">3</span>,
+			<span style="color:#d14">&#34;retention&#34;</span>:          <span style="color:#d14">&#34;24h&#34;</span>,
+		}, <span style="color:#998;font-style:italic">// arguments
+</span><span style="color:#998;font-style:italic"></span>	)
+	<span style="color:#000;font-weight:bold">if</span> err <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">nil</span> {
+		<span style="color:#000;font-weight:bold">return</span> errors.<span style="color:#900;font-weight:bold">Wrap</span>(err, <span style="color:#d14">&#34;exchange declare failed&#34;</span>)
+	}
+
+	<span style="color:#998;font-style:italic">// ... work with exchange (i.e. bind queues to it, publish messages to it) ...
+</span><span style="color:#998;font-style:italic"></span>
+	<span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nil</span>
+}</code></pre></div></div><div id="examples-amqp-0-9-1-exchange-php"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-php" data-lang="php"><span style="color:#999;font-weight:bold;font-style:italic">&lt;?php</span>
+<span style="color:#008080">$channel</span><span style="color:#000;font-weight:bold">-&gt;</span><span style="color:#008080">exchangeDeclare</span>(
+    <span style="color:#d14">&#34;my-exchange&#34;</span>, <span style="color:#998;font-style:italic">// name
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#d14">&#34;fanout&#34;</span>,      <span style="color:#998;font-style:italic">// type
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#000;font-weight:bold">false</span>,         <span style="color:#998;font-style:italic">// passive
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#000;font-weight:bold">true</span>,          <span style="color:#998;font-style:italic">// durable
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#000;font-weight:bold">false</span>,         <span style="color:#998;font-style:italic">// auto-delete
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#000;font-weight:bold">false</span>,         <span style="color:#998;font-style:italic">// internal
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#000;font-weight:bold">false</span>,         <span style="color:#998;font-style:italic">// no-wait
+</span><span style="color:#998;font-style:italic"></span>    [              <span style="color:#998;font-style:italic">// arguments
+</span><span style="color:#998;font-style:italic"></span>        <span style="color:#d14">&#34;shards&#34;</span>             <span style="color:#000;font-weight:bold">=&gt;</span> <span style="color:#099">1</span>,
+        <span style="color:#d14">&#34;replication-factor&#34;</span> <span style="color:#000;font-weight:bold">=&gt;</span> <span style="color:#099">3</span>,
+        <span style="color:#d14">&#34;retention&#34;</span>          <span style="color:#000;font-weight:bold">=&gt;</span> <span style="color:#d14">&#34;24h&#34;</span>,
+    ]
+);
+</code></pre></div></div>
+
+<p>AMQP defines several knobs that can be used when creating exchanges:</p>
+
+<ul>
+<li><strong>durable</strong> - If set, it means that the exchange should survive server restart, transient exchanges should be purged upon server restart. Since EventterMQ is designed to be highly available, there is no such thing &ldquo;server restart&rdquo;, that could wipe all memory data, e.g. transient exchanges. Therefore you have to set this parameter to true, otherwise the broker returns not-implemented error.</li>
+<li><strong>auto-delete</strong> - If it, it means that the exchange should be deleted when there are queues consuming from it. This argument was introduced in earlier versions of the spec and deprecated in AMQP 0.9.1. If set to true, the broker returns not-implemented error.</li>
+<li><strong>internal</strong> - Internal exchanges could be used to more intricate routing topologies, they make sense for <a href="https://www.rabbitmq.com/dlx.html">dead-lettering</a> and extensions such as <a href="https://www.rabbitmq.com/e2e.html">exchange to exchange bindings</a>. As the broker supports neither of those, you cannot declare internal exchanges, it returns not-implemented error if you try.</li>
+</ul>
+
+<p>Additional topic settings can by configured by <strong>arguments</strong> map.</p>
+
+<p>AMQP spec requires that the broker declares special exchanges like <code>amq.direct</code>, <code>amq.topic</code> etc. EventterMQ doesn&rsquo;t declare these exchanges (topics).</p>
+
+<h3 id="queues-consumer-groups">Queues (consumer groups)</h3>
+
+<nav class="tabs" data-component="tabs">
+    <ul><li class="active">
+                    <a href="#examples-amqp-0-9-1-queue-go">Go</a>
+                </li><li>
+                    <a href="#examples-amqp-0-9-1-queue-php">PHP</a>
+                </li></ul>
+</nav>
+<div id="examples-amqp-0-9-1-queue-go"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#000;font-weight:bold">package</span> example
+
+<span style="color:#000;font-weight:bold">import</span> (
+	<span style="color:#d14">&#34;github.com/pkg/errors&#34;</span>
+	<span style="color:#d14">&#34;github.com/streadway/amqp&#34;</span>
+)
+
+<span style="color:#000;font-weight:bold">func</span> <span style="color:#900;font-weight:bold">queue</span>(channel <span style="color:#000;font-weight:bold">*</span>amqp.Channel) <span style="color:#458;font-weight:bold">error</span> {
+	queue, err <span style="color:#000;font-weight:bold">:=</span> channel.<span style="color:#900;font-weight:bold">QueueDeclare</span>(
+		<span style="color:#d14">&#34;my-queue&#34;</span>, <span style="color:#998;font-style:italic">// name
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">true</span>,       <span style="color:#998;font-style:italic">// durable
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,      <span style="color:#998;font-style:italic">// auto-delete
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,      <span style="color:#998;font-style:italic">// exclusive
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,      <span style="color:#998;font-style:italic">// no-wait
+</span><span style="color:#998;font-style:italic"></span>		amqp.Table{
+			<span style="color:#d14">&#34;size&#34;</span>: <span style="color:#099">1024</span>,
+		}, <span style="color:#998;font-style:italic">// arguments
+</span><span style="color:#998;font-style:italic"></span>	)
+	<span style="color:#000;font-weight:bold">if</span> err <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">nil</span> {
+		<span style="color:#000;font-weight:bold">return</span> errors.<span style="color:#900;font-weight:bold">Wrap</span>(err, <span style="color:#d14">&#34;queue declare failed&#34;</span>)
+	}
+
+	<span style="color:#998;font-style:italic">// ... work with queue ...
+</span><span style="color:#998;font-style:italic"></span>
+	_ = queue
+
+	<span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nil</span>
+}</code></pre></div></div><div id="examples-amqp-0-9-1-queue-php"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-php" data-lang="php"><span style="color:#999;font-weight:bold;font-style:italic">&lt;?php</span>
+<span style="color:#008080">$channel</span><span style="color:#000;font-weight:bold">-&gt;</span><span style="color:#008080">queueDeclare</span>(
+    <span style="color:#d14">&#34;my-queue&#34;</span>, <span style="color:#998;font-style:italic">// name
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#000;font-weight:bold">false</span>,      <span style="color:#998;font-style:italic">// passive
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#000;font-weight:bold">true</span>,       <span style="color:#998;font-style:italic">// durable
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#000;font-weight:bold">false</span>,      <span style="color:#998;font-style:italic">// exclusive
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#000;font-weight:bold">false</span>,      <span style="color:#998;font-style:italic">// auto-delete
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#000;font-weight:bold">false</span>,      <span style="color:#998;font-style:italic">// no-wait
+</span><span style="color:#998;font-style:italic"></span>    [           <span style="color:#998;font-style:italic">// arguments
+</span><span style="color:#998;font-style:italic"></span>        <span style="color:#d14">&#34;size&#34;</span> <span style="color:#000;font-weight:bold">=&gt;</span> <span style="color:#099">1024</span>,
+    ]
+);
+</code></pre></div></div>
+
+<p>Queues have several knobs as well. Non-<strong>durable</strong> and <strong>auto-delete</strong> queues are not implemented for the same reasons as mentioned in previous section. <strong>exclusive</strong> queues are also not implemented as it would require brokers to share list of all connected clients and whether they subscribe to consumer groups. If you need exclusive access to a queue, I suggest you use external locking service.</p>
+
+<p>If you leave queue name empty, one will be generated and returned in response.</p>
+
+<h4 id="bindings">Bindings</h4>
+
+<p>EventterMQ&rsquo;s <a href="https://eventter.io/docs/protocols/#grpc"><code>CreateConsumerGroup</code> RPC call</a> both creates consumer group and its bindings. AMQP separates these operations - after you&rsquo;ve created a consumer group, you have to call <code>queue.bind</code>:</p>
+
+<nav class="tabs" data-component="tabs">
+    <ul><li class="active">
+                    <a href="#examples-amqp-0-9-1-bind-go">Go</a>
+                </li><li>
+                    <a href="#examples-amqp-0-9-1-bind-php">PHP</a>
+                </li></ul>
+</nav>
+<div id="examples-amqp-0-9-1-bind-go"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#000;font-weight:bold">package</span> example
+
+<span style="color:#000;font-weight:bold">import</span> (
+	<span style="color:#d14">&#34;github.com/pkg/errors&#34;</span>
+	<span style="color:#d14">&#34;github.com/streadway/amqp&#34;</span>
+)
+
+<span style="color:#000;font-weight:bold">func</span> <span style="color:#900;font-weight:bold">bind</span>(channel <span style="color:#000;font-weight:bold">*</span>amqp.Channel) <span style="color:#458;font-weight:bold">error</span> {
+	err <span style="color:#000;font-weight:bold">:=</span> channel.<span style="color:#900;font-weight:bold">QueueBind</span>(
+		<span style="color:#d14">&#34;my-queue&#34;</span>,    <span style="color:#998;font-style:italic">// queue
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#d14">&#34;&#34;</span>,            <span style="color:#998;font-style:italic">// routing key
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#d14">&#34;my-exchange&#34;</span>, <span style="color:#998;font-style:italic">// exchange
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,         <span style="color:#998;font-style:italic">// no-wait
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">nil</span>,           <span style="color:#998;font-style:italic">// binding arguments
+</span><span style="color:#998;font-style:italic"></span>	)
+	<span style="color:#000;font-weight:bold">if</span> err <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">nil</span> {
+		<span style="color:#000;font-weight:bold">return</span> errors.<span style="color:#900;font-weight:bold">Wrap</span>(err, <span style="color:#d14">&#34;bind failed&#34;</span>)
+	}
+
+	<span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nil</span>
+}</code></pre></div></div><div id="examples-amqp-0-9-1-bind-php"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-php" data-lang="php"><span style="color:#999;font-weight:bold;font-style:italic">&lt;?php</span>
+<span style="color:#008080">$channel</span><span style="color:#000;font-weight:bold">-&gt;</span><span style="color:#008080">queueBind</span>(
+    <span style="color:#d14">&#34;my-queue&#34;</span>,    <span style="color:#998;font-style:italic">// queue
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#d14">&#34;my-exchange&#34;</span>, <span style="color:#998;font-style:italic">// exchange
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#d14">&#34;&#34;</span>,            <span style="color:#998;font-style:italic">// routing key
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#000;font-weight:bold">false</span>,         <span style="color:#998;font-style:italic">// no-wait
+</span><span style="color:#998;font-style:italic"></span>    []             <span style="color:#998;font-style:italic">// binding arguments
+</span><span style="color:#998;font-style:italic"></span>);
+</code></pre></div></div>
+
+<p>Additionally, AMQP server always ensures that there is an <strong>default (nameless) exchange</strong> of type <em>direct</em> and every queue is bound to this exchange using its names as a routing key. This exchanges is backed by a topic with single shard, replication factor of 3 and lowest possible retention period (1 nanosecond, so essentially messages will be immediately forgotten once consumed).</p>
+
+<h3 id="producers">Producers</h3>
+
+<p>To send message directly to the queue, use empty string as exchange name and queue name as <em>routing key</em>:</p>
+
+<nav class="tabs" data-component="tabs">
+    <ul><li class="active">
+                    <a href="#examples-amqp-0-9-1-publish_queue-go">Go</a>
+                </li><li>
+                    <a href="#examples-amqp-0-9-1-publish_queue-php">PHP</a>
+                </li></ul>
+</nav>
+<div id="examples-amqp-0-9-1-publish_queue-go"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#000;font-weight:bold">package</span> example
+
+<span style="color:#000;font-weight:bold">import</span> (
+	<span style="color:#d14">&#34;github.com/pkg/errors&#34;</span>
+	<span style="color:#d14">&#34;github.com/streadway/amqp&#34;</span>
+)
+
+<span style="color:#000;font-weight:bold">func</span> <span style="color:#900;font-weight:bold">publishToQueue</span>(channel <span style="color:#000;font-weight:bold">*</span>amqp.Channel) <span style="color:#458;font-weight:bold">error</span> {
+	err <span style="color:#000;font-weight:bold">:=</span> channel.<span style="color:#900;font-weight:bold">Publish</span>(
+		<span style="color:#d14">&#34;&#34;</span>,         <span style="color:#998;font-style:italic">// exchange = empty string means default exchange
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#d14">&#34;my-queue&#34;</span>, <span style="color:#998;font-style:italic">// routing key = queue name
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,      <span style="color:#998;font-style:italic">// mandatory
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,      <span style="color:#998;font-style:italic">// immediate
+</span><span style="color:#998;font-style:italic"></span>		amqp.Publishing{
+			Body: []<span style="color:#0086b3">byte</span>(<span style="color:#d14">&#34;hello, queue&#34;</span>),
+		}, <span style="color:#998;font-style:italic">// message
+</span><span style="color:#998;font-style:italic"></span>	)
+
+	<span style="color:#000;font-weight:bold">if</span> err <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">nil</span> {
+		<span style="color:#000;font-weight:bold">return</span> errors.<span style="color:#900;font-weight:bold">Wrap</span>(err, <span style="color:#d14">&#34;publish failed&#34;</span>)
+	}
+
+	<span style="color:#998;font-style:italic">// ...
+</span><span style="color:#998;font-style:italic"></span>
+	<span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nil</span>
+}</code></pre></div></div><div id="examples-amqp-0-9-1-publish_queue-php"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-php" data-lang="php"><span style="color:#999;font-weight:bold;font-style:italic">&lt;?php</span>
+<span style="color:#008080">$channel</span><span style="color:#000;font-weight:bold">-&gt;</span><span style="color:#008080">publish</span>(
+    <span style="color:#d14">&#34;hello, queue&#34;</span>, <span style="color:#998;font-style:italic">// message body
+</span><span style="color:#998;font-style:italic"></span>    [],             <span style="color:#998;font-style:italic">// message properties / headers
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#d14">&#34;&#34;</span>,             <span style="color:#998;font-style:italic">// exchange = empty string means default exchange
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#d14">&#34;my-queue&#34;</span>      <span style="color:#998;font-style:italic">// routing key = queue name
+</span><span style="color:#998;font-style:italic"></span>);
+</code></pre></div></div>
+
+<blockquote>
+<p>Note: <strong>mandatory</strong> and <strong>immediate</strong> knobs must always be false, otherwise not-implemented error will be returned.</p>
+</blockquote>
+
+<p>Publishing to named exchange can be done as follows:</p>
+
+<nav class="tabs" data-component="tabs">
+    <ul><li class="active">
+                    <a href="#examples-amqp-0-9-1-publish_exchange-go">Go</a>
+                </li><li>
+                    <a href="#examples-amqp-0-9-1-publish_exchange-php">PHP</a>
+                </li></ul>
+</nav>
+<div id="examples-amqp-0-9-1-publish_exchange-go"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#000;font-weight:bold">package</span> example
+
+<span style="color:#000;font-weight:bold">import</span> (
+	<span style="color:#d14">&#34;github.com/pkg/errors&#34;</span>
+	<span style="color:#d14">&#34;github.com/streadway/amqp&#34;</span>
+)
+
+<span style="color:#000;font-weight:bold">func</span> <span style="color:#900;font-weight:bold">publishToExchange</span>(channel <span style="color:#000;font-weight:bold">*</span>amqp.Channel) <span style="color:#458;font-weight:bold">error</span> {
+	err <span style="color:#000;font-weight:bold">:=</span> channel.<span style="color:#900;font-weight:bold">Publish</span>(
+		<span style="color:#d14">&#34;my-exchange&#34;</span>, <span style="color:#998;font-style:italic">// exchange
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#d14">&#34;&#34;</span>,            <span style="color:#998;font-style:italic">// routing key = because exchange has type fanout, all messages are passed to bound queues
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,         <span style="color:#998;font-style:italic">// mandatory
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,         <span style="color:#998;font-style:italic">// immediate
+</span><span style="color:#998;font-style:italic"></span>		amqp.Publishing{
+			Body: []<span style="color:#0086b3">byte</span>(<span style="color:#d14">&#34;hello, exchange&#34;</span>),
+		}, <span style="color:#998;font-style:italic">// message
+</span><span style="color:#998;font-style:italic"></span>	)
+
+	<span style="color:#000;font-weight:bold">if</span> err <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">nil</span> {
+		<span style="color:#000;font-weight:bold">return</span> errors.<span style="color:#900;font-weight:bold">Wrap</span>(err, <span style="color:#d14">&#34;publish failed&#34;</span>)
+	}
+
+	<span style="color:#998;font-style:italic">// ...
+</span><span style="color:#998;font-style:italic"></span>
+	<span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nil</span>
+}</code></pre></div></div><div id="examples-amqp-0-9-1-publish_exchange-php"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-php" data-lang="php"><span style="color:#999;font-weight:bold;font-style:italic">&lt;?php</span>
+<span style="color:#008080">$channel</span><span style="color:#000;font-weight:bold">-&gt;</span><span style="color:#008080">publish</span>(
+    <span style="color:#d14">&#34;hello, exchange&#34;</span>, <span style="color:#998;font-style:italic">// message body
+</span><span style="color:#998;font-style:italic"></span>    [],                <span style="color:#998;font-style:italic">// message properties / headers
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#d14">&#34;my-exchange&#34;</span>,     <span style="color:#998;font-style:italic">// exchange = empty string means default exchange
+</span><span style="color:#998;font-style:italic"></span>    <span style="color:#d14">&#34;&#34;</span>                 <span style="color:#998;font-style:italic">// routing key = because exchange has type fanout, all messages are passed to bound queues
+</span><span style="color:#998;font-style:italic"></span>);
+</code></pre></div></div>
+
+<h3 id="consumers">Consumers</h3>
+
+<p>To start receiving messages, you call consume method on a channel:</p>
+
+<nav class="tabs" data-component="tabs">
+    <ul><li class="active">
+                    <a href="#examples-amqp-0-9-1-consume-go">Go</a>
+                </li><li>
+                    <a href="#examples-amqp-0-9-1-consume-php">PHP</a>
+                </li></ul>
+</nav>
+<div id="examples-amqp-0-9-1-consume-go"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#000;font-weight:bold">package</span> example
+
+<span style="color:#000;font-weight:bold">import</span> (
+	<span style="color:#d14">&#34;github.com/pkg/errors&#34;</span>
+	<span style="color:#d14">&#34;github.com/streadway/amqp&#34;</span>
+)
+
+<span style="color:#000;font-weight:bold">func</span> <span style="color:#900;font-weight:bold">consume</span>(channel <span style="color:#000;font-weight:bold">*</span>amqp.Channel) <span style="color:#458;font-weight:bold">error</span> {
+	deliveries, err <span style="color:#000;font-weight:bold">:=</span> channel.<span style="color:#900;font-weight:bold">Consume</span>(
+		<span style="color:#d14">&#34;my-queue&#34;</span>, <span style="color:#998;font-style:italic">// queue
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#d14">&#34;&#34;</span>,         <span style="color:#998;font-style:italic">// consumer tag
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,      <span style="color:#998;font-style:italic">// no-ack
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,      <span style="color:#998;font-style:italic">// exclusive
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,      <span style="color:#998;font-style:italic">// no-local
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">false</span>,      <span style="color:#998;font-style:italic">// no-wait
+</span><span style="color:#998;font-style:italic"></span>		<span style="color:#000;font-weight:bold">nil</span>,        <span style="color:#998;font-style:italic">// arguments
+</span><span style="color:#998;font-style:italic"></span>	)
+	<span style="color:#000;font-weight:bold">if</span> err <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">nil</span> {
+		<span style="color:#000;font-weight:bold">return</span> errors.<span style="color:#900;font-weight:bold">Wrap</span>(err, <span style="color:#d14">&#34;consume failed&#34;</span>)
+	}
+
+	<span style="color:#000;font-weight:bold">for</span> delivery <span style="color:#000;font-weight:bold">:=</span> <span style="color:#000;font-weight:bold">range</span> deliveries {
+		<span style="color:#998;font-style:italic">// ... process message ...
+</span><span style="color:#998;font-style:italic"></span>
+		err <span style="color:#000;font-weight:bold">:=</span> delivery.<span style="color:#900;font-weight:bold">Ack</span>(<span style="color:#000;font-weight:bold">false</span>)
+		<span style="color:#000;font-weight:bold">if</span> err <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">nil</span> {
+			<span style="color:#000;font-weight:bold">return</span> errors.<span style="color:#900;font-weight:bold">Wrap</span>(err, <span style="color:#d14">&#34;ack failed&#34;</span>)
+		}
+	}
+
+	<span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">nil</span>
+}</code></pre></div></div><div id="examples-amqp-0-9-1-consume-php"><div class="highlight"><pre style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-php" data-lang="php"><span style="color:#999;font-weight:bold;font-style:italic">&lt;?php</span>
+<span style="color:#000;font-weight:bold">use</span> Bunny\Message;
+<span style="color:#000;font-weight:bold">use</span> Bunny\Channel;
+<span style="color:#000;font-weight:bold">use</span> Bunny\Client;
+
+<span style="color:#008080">$channel</span><span style="color:#000;font-weight:bold">-&gt;</span><span style="color:#008080">consume</span>(<span style="color:#000;font-weight:bold">function</span> (Message <span style="color:#008080">$message</span>, Channel <span style="color:#008080">$channel</span>, Client <span style="color:#008080">$client</span>){
+
+    <span style="color:#998;font-style:italic">// ... process message ...
+</span><span style="color:#998;font-style:italic"></span>
+    <span style="color:#008080">$channel</span><span style="color:#000;font-weight:bold">-&gt;</span><span style="color:#008080">ack</span>(<span style="color:#008080">$message</span>);
+
+}, <span style="color:#d14">&#34;my-queue&#34;</span>);
+
+<span style="color:#008080">$client</span><span style="color:#000;font-weight:bold">-&gt;</span><span style="color:#008080">run</span>();
+</code></pre></div></div>
+
+<p>Again consume have various knobs. <strong>exclusive</strong> (no other consumer can bound to the queue) and <strong>no-local</strong> (messages sent by this connection cannot be received) are not implemented. <strong>no-ack</strong> means that you do not have to send acknowledgements for processed messages (you get <em>at-most-once</em> delivery guarantee) and is implemented.</p>
+
+<h3 id="what-next">What next?</h3>
+
+<p>Learn how the broker achieves fault-tolerance using <a href="https://eventter.io/docs/clustering/">clustering</a>. Or about <a href="https://eventter.io/docs/protocols/">other protocols</a> the broker supports.</p>
 
 
             <hr/>

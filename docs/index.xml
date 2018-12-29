@@ -60,7 +60,9 @@ EventterMQ can be used for this as well. It supports standardized messaging prot
       <pubDate>Fri, 28 Dec 2018 13:00:38 +0100</pubDate>
       
       <guid>https://eventter.io/docs/amqp-0-9-1/</guid>
-      <description>TODO</description>
+      <description>In messaging overview we&amp;rsquo;ve learnt about two distinct models that allow decoupling of message producers and consumers. As said in the overview, AMQP chose exchange-queue model, but EventterMQ uses topic-consumer group model. In this article we&amp;rsquo;ll describe AMQ model in depth, explain how it maps to topics &amp;amp; consumer groups and show examples how to connect to the broker using AMQP.
+ Note: Advanced Message Queueing Protocol
+When this article refers to AMQP, it refers to AMQP 0.</description>
     </item>
     
     <item>

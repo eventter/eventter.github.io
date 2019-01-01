@@ -201,7 +201,7 @@ headingSelector: 'h3'
 	ctx, cancel <span style="color:#000;font-weight:bold">:=</span> context.<span style="color:#900;font-weight:bold">WithCancel</span>(context.<span style="color:#900;font-weight:bold">Background</span>())
 	<span style="color:#000;font-weight:bold">defer</span> <span style="color:#900;font-weight:bold">cancel</span>()
 
-	response, err <span style="color:#000;font-weight:bold">:=</span> client.<span style="color:#900;font-weight:bold">CreateNamespace</span>(ctx, <span style="color:#000;font-weight:bold">&amp;</span>emq.CreateNamespaceRequest{
+	response, err <span style="color:#000;font-weight:bold">:=</span> client.<span style="color:#900;font-weight:bold">CreateNamespace</span>(ctx, <span style="color:#000;font-weight:bold">&amp;</span>emq.NamespaceCreateRequest{
 		Namespace: <span style="color:#d14">&#34;foo&#34;</span>,
 	})
 	<span style="color:#000;font-weight:bold">if</span> err <span style="color:#000;font-weight:bold">!=</span> <span style="color:#000;font-weight:bold">nil</span> {

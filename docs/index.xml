@@ -41,8 +41,8 @@ EventterMQ can be used for this as well. It supports standardized messaging prot
       <pubDate>Thu, 27 Dec 2018 15:34:04 +0100</pubDate>
       
       <guid>https://eventter.io/docs/protocols/</guid>
-      <description>EventterMQ currently supports two protocols:
- AMQP 0.9.1 (standardized messaging protocol), gRPC service described by emq.proto (see it on GitHub).  AMQP 0.9.1 AMQP 0.9.1 is a binary protocol intended for messaging. It&amp;rsquo;s reasonably easy to implement, therefore there are many client libraries. It&amp;rsquo;s most well-know to be the core protocol of RabbitMQ. Probably most up-to-date list of client libraries can be found on RabbitMQ website here. Some notable mentions:</description>
+      <description>EventterMQ currently supports three protocols:
+ AMQP 0.9.1, AMQP 1.0, gRPC service described by emq.proto (see it on GitHub).  AMQP 0.9.1 AMQP 0.9.1 is a binary protocol intended for messaging. It&amp;rsquo;s reasonably easy to implement, therefore there are many client libraries. It&amp;rsquo;s most well-know to be the core protocol of RabbitMQ. Probably most up-to-date list of client libraries can be found on RabbitMQ website here. Some notable mentions:</description>
     </item>
     
     <item>
@@ -64,6 +64,16 @@ Network topology Brokers are expected to be run in a trusted private network.</d
       <description>In messaging overview we&amp;rsquo;ve learnt about two distinct models that allow decoupling of message producers and consumers. As said in the overview, AMQP chose exchange-queue model, but EventterMQ uses topic-consumer group model. In this article we&amp;rsquo;ll describe AMQ model in depth, explain how it maps to topics &amp;amp; consumer groups and show examples how to connect to the broker using AMQP.
  Note: Advanced Message Queueing Protocol
 When this article refers to AMQP, it refers to AMQP 0.</description>
+    </item>
+    
+    <item>
+      <title>AMQP 1.0</title>
+      <link>https://eventter.io/docs/amqp-1-0/</link>
+      <pubDate>Sat, 05 Jan 2019 21:45:21 +0100</pubDate>
+      
+      <guid>https://eventter.io/docs/amqp-1-0/</guid>
+      <description>EventterMQ offers support for all AMQP versions on the non-standard port that defaults to port of the gRPC service + 1. Default gRPC port is 16000, so default AMQP port is 16001.
+Go   package example import ( &amp;#34;github.com/pkg/errors&amp;#34; &amp;#34;pack.ag/amqp&amp;#34; ) func connect() error { client, err := amqp.Dial(&amp;#34;amqp://127.0.0.1:16001&amp;#34;) if err != nil { return errors.Wrap(err, &amp;#34;dial failed&amp;#34;) } defer client.Close() // ... work with the client ...  return nil } At the moment, the broker doesn&amp;rsquo;t require any client authentication.</description>
     </item>
     
     <item>

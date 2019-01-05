@@ -127,10 +127,11 @@ headingSelector: 'h3'
 
             
 
-<p>EventterMQ currently supports two protocols:</p>
+<p>EventterMQ currently supports three protocols:</p>
 
 <ul>
-<li><a href="https://eventter.io/docs/amqp-0-9-1/">AMQP 0.9.1</a> (standardized messaging protocol),</li>
+<li><a href="https://eventter.io/docs/amqp-0-9-1/">AMQP 0.9.1</a>,</li>
+<li><a href="https://eventter.io/docs/amqp-1-0/">AMQP 1.0</a>,</li>
 <li><a href="https://grpc.io/">gRPC</a> service described by <code>emq.proto</code> (<a href="https://github.com/eventter/eventter/tree/master/mq/emq/emq.proto">see it on GitHub</a>).</li>
 </ul>
 
@@ -163,6 +164,12 @@ headingSelector: 'h3'
 </blockquote>
 
 <p>AMQP uses slightly different model for decoupling producers and consumers than EventterMQ. To see how AMQ entities map to EventterMQ entities read through separate <a href="https://eventter.io/docs/amqp-0-9-1/">AMQP 0.9.1 article</a>.</p>
+
+<h3 id="amqp-1-0">AMQP 1.0</h3>
+
+<p>AMQP 1.0 defines a binary protocol for reliable message delivery. It doesn&rsquo;t, however, provide any means to create topics or consumer groups. You might know AMQP 1.0 as one of the protocols supported by <a href="https://activemq.apache.org/">ActiveMQ</a>.</p>
+
+<p>Learn how to connect using AMQP 1.0 in a <a href="https://eventter.io/docs/amqp-1-0/">separate article</a>.</p>
 
 <h3 id="grpc">gRPC</h3>
 
@@ -216,7 +223,6 @@ headingSelector: 'h3'
 <p>Support for additional protocols is planned. At the moment planned protocols are:</p>
 
 <ul>
-<li>AMQP 1.0 - it would seem that AMQP 1.0 is just another version of AMQP 0.9.1, however, they&rsquo;re, in essence, completely different protocols (different semantics, wire representations), albeit developed by the same working group and both targeted for messaging (AMQP 0.9.1 was chosen to be implemented first as it&rsquo;s used more),</li>
 <li>HTTP - simple protocol, although not intended for messaging (if you look into <code>emq.proto</code>, you&rsquo;ll see that all RPC calls are annotated with HTTP verbs and paths, it should be easy to generate HTTP service using <a href="https://github.com/grpc-ecosystem/grpc-gateway">grpc-gateway</a>).</li>
 <li>MQTT - protocol mostly used for <a href="https://en.wikipedia.org/wiki/Internet_of_things">IoT</a> and compute-/memory-constrained devices.</li>
 </ul>
